@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Main Portfolio Page -->
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="bn" href="https://mh-rafi-portfolio.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mh-rafi-portfolio.vercel.app/"/>
+    <image:image>
+      <image:loc>https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg</image:loc>
+      <image:title>MH RAFI — Hobby Web Developer Bangladesh</image:title>
+      <image:caption>রাফি — বাংলাদেশের self-taught hobby web developer, মুন্নুর রাফি, রাফিকার বাবা</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Section anchors — helps Google index individual sections -->
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/#about</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/#story</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/#skills</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/#projects</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://mh-rafi-portfolio.vercel.app/#contact</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
