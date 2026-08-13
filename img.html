@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Image Extract — by MH Rafi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --bg1: #060a12;
+    --glass: rgba(255,255,255,0.06);
+    --glass-hi: rgba(255,255,255,0.11);
+    --stroke: rgba(255,255,255,0.16);
+    --stroke-soft: rgba(255,255,255,0.08);
+    --mint: #30E0A0;
+    --mint-dim: #1f8f68;
+    --blue: #4FA8FF;
+    --violet: #8B7BFF;
+    --amber: #FFB238;
+    --red: #FF6B6B;
+    --ink: #EAF2EE;
+    --ink-dim: #93A0A8;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+  body{
+    background: var(--bg1);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 100px 18px 90px;
+    display:flex; flex-direction:column; align-items:center;
+    position: relative;
+    overflow-x:hidden;
+  }
+  .blob{
+    position: fixed; border-radius:50%; filter: blur(70px); z-index:0; opacity:0.55;
+    pointer-events:none; transition: transform 0.6s var(--ease);
+  }
+  .blob1{ width:420px; height:420px; top:-160px; left:-120px; background: radial-gradient(circle, #2ee6a6, transparent 70%); }
+  .blob2{ width:380px; height:380px; top:10%; right:-140px; background: radial-gradient(circle, #4FA8FF, transparent 70%); }
+  .blob3{ width:340px; height:340px; bottom:-140px; left:20%; background: radial-gradient(circle, #7A6CFF, transparent 70%); opacity:0.35; }
+
+  .head, .panel, .section-label, #refs, #gallery, .empty, .toolbar, .exportbar{ position:relative; z-index:1; }
+  @keyframes riseIn{ from{ opacity:0; transform: translateY(14px);} to{ opacity:1; transform: translateY(0);} }
+  .head{ animation: riseIn 0.6s var(--ease) both; }
+  .panel{ animation: riseIn 0.6s var(--ease) 0.1s both; }
+
+  /* ---------- Dynamic Island status pill ---------- */
+  .island{
+    position: fixed; top:14px; left:50%; transform: translateX(-50%);
+    background: rgba(10,12,14,0.88);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius:22px; border:1px solid rgba(255,255,255,0.1);
+    padding:0 18px; height:0; overflow:hidden;
+    display:flex; align-items:center; gap:10px;
+    z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    transition: height 0.45s var(--spring), padding 0.45s var(--spring), width 0.3s var(--ease);
+    max-width:92vw; white-space:nowrap;
+  }
+  .island.show{ height:40px; padding:0 18px; }
+  .island .dot{ width:8px; height:8px; border-radius:50%; background: var(--mint); flex-shrink:0; }
+  .island.busy .dot{ animation: pulse 1s ease-in-out infinite; }
+  .island.err .dot{ background: var(--red); animation:none; }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:0.4; transform:scale(0.7);} }
+  .island span{ font-family: var(--sans); font-size:0.78rem; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; }
+  .island .bar{
+    position:absolute; bottom:0; left:0; height:2px; background: linear-gradient(90deg, var(--mint), var(--blue));
+    border-radius:2px; transition: width 0.3s ease; width:0%;
+  }
+
+  /* ---------- header ---------- */
+  .head{ width:100%; max-width:640px; margin-bottom:26px; }
+  h1{ font-family: var(--sans); font-weight:700; font-size:2.6rem; letter-spacing:-0.03em; color:#fff; line-height:1.08; }
+  h1 span{ background: linear-gradient(120deg, var(--mint), var(--blue)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .credit{ font-family: var(--mono); font-size:0.72rem; letter-spacing:0.26em; color: var(--mint); text-transform:uppercase; margin-top:10px; font-weight:600; opacity:0.85; }
+
+  /* ---------- glass panel ---------- */
+  .panel{
+    width:100%; max-width:640px; background: var(--glass);
+    backdrop-filter: blur(30px) saturate(190%); -webkit-backdrop-filter: blur(30px) saturate(190%);
+    border:1px solid var(--stroke); border-radius:34px; overflow:hidden;
+    position:relative;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(255,255,255,0.03);
+  }
+  .panel::before{
+    content:''; position:absolute; top:0; left:6%; right:6%; height:1px; z-index:2;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    pointer-events:none;
+  }
+
+  .tabs{ position:relative; display:flex; gap:4px; padding:6px; margin:14px; background: rgba(0,0,0,0.25); border-radius:20px; border:1px solid var(--stroke-soft); }
+  .tab-indicator{ position:absolute; top:6px; bottom:6px; left:6px; width:50px; border-radius:15px; z-index:0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 0 0 1px rgba(255,255,255,0.06);
+    transition: transform 0.5s var(--spring), width 0.5s var(--spring);
+  }
+  .tab{ position:relative; z-index:1; flex:1; padding:10px 4px; border:none; border-radius:14px; cursor:pointer; background:transparent; color: var(--ink-dim); font-family: var(--sans); font-size:0.72rem; font-weight:600; transition: color 0.3s var(--ease), transform 0.15s var(--ease); }
+  .tab.active{ color:#fff; }
+  .tab:hover:not(.active){ color:#fff; }
+  .tab:active{ transform: scale(0.96); }
+
+  .drop{ position:relative; margin:0 14px 14px; padding:34px 20px; text-align:center; background: rgba(255,255,255,0.03); border:1.5px dashed var(--stroke); border-radius:20px; cursor:pointer; transition: background 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.2s var(--ease); }
+  .drop:hover, .drop.drag{ background: rgba(48,224,160,0.07); border-color: rgba(48,224,160,0.45); transform: scale(1.01); }
+  .drop-icon{ font-size:1.7rem; display:block; margin-bottom:10px; filter: drop-shadow(0 0 10px rgba(48,224,160,0.5)); }
+  .drop b{ font-weight:600; color:#fff; font-size:0.98rem; display:block; }
+  .drop small{ color: var(--ink-dim); font-size:0.8rem; display:block; margin-top:6px; }
+  input[type="file"]{ position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+
+  .baserow{ padding:0 14px 14px; }
+  .urlrow{ display:none; padding:0 14px 14px; gap:10px; flex-direction:column; }
+  .urlrow.show{ display:flex; }
+  .urlrow textarea, .urlrow input, .baserow input{
+    width:100%; padding:14px 16px; border-radius:16px; background: rgba(0,0,0,0.3);
+    border:1px solid var(--stroke-soft); color:#fff; font-family:var(--mono); font-size:0.85rem;
+    outline:none; transition: border-color 0.2s ease; resize:vertical;
+  }
+  .urlrow textarea{ min-height:70px; }
+  .urlrow textarea:focus, .urlrow input:focus, .baserow input:focus{ border-color: rgba(48,224,160,0.5); background: rgba(0,0,0,0.4); }
+  .urlrow textarea::placeholder, .urlrow input::placeholder, .baserow input::placeholder{ color: var(--ink-dim); }
+
+  /* iOS toggle switch */
+  .switchrow{ display:flex; align-items:center; justify-content:space-between; padding:2px 4px; }
+  .switchrow label{ font-family: var(--sans); font-size:0.8rem; color: var(--ink); font-weight:500; }
+  .ios-switch{ position:relative; width:46px; height:27px; flex-shrink:0; }
+  .ios-switch input{ opacity:0; width:100%; height:100%; position:absolute; margin:0; cursor:pointer; z-index:2; }
+  .ios-switch .track{ position:absolute; inset:0; background: rgba(255,255,255,0.15); border-radius:14px; transition: background 0.3s var(--ease); }
+  .ios-switch .knob{ position:absolute; top:2px; left:2px; width:23px; height:23px; background:#fff; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.4); transition: transform 0.3s var(--spring); }
+  .ios-switch input:checked ~ .track{ background: var(--mint); }
+  .ios-switch input:checked ~ .knob{ transform: translateX(19px); }
+
+  .filebar{ display:none; align-items:center; justify-content:space-between; margin:0 14px 14px; padding:12px 16px; background: rgba(255,255,255,0.04); border:1px solid var(--stroke-soft); border-radius:14px; font-family: var(--mono); font-size:0.76rem; color: var(--ink-dim); }
+  .filebar.show{ display:flex; }
+  .filebar .name{ color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .filebar .clear{ color: var(--ink-dim); background:none; border:none; cursor:pointer; font-family: var(--sans); font-size:0.78rem; font-weight:600; flex-shrink:0; margin-left:10px; }
+  .filebar .clear:hover{ color: var(--red); }
+
+  .progwrap{ display:none; margin:0 14px 14px; }
+  .progwrap.show{ display:block; }
+  .progbar{ height:6px; border-radius:4px; background: rgba(255,255,255,0.08); overflow:hidden; }
+  .progbar i{ display:block; height:100%; width:0%; background: linear-gradient(90deg, var(--mint), var(--blue)); border-radius:4px; transition: width 0.35s var(--ease); }
+  .progtext{ font-family: var(--mono); font-size:0.7rem; color: var(--ink-dim); margin-top:6px; }
+
+  #logPanel{ display:none; margin:0 14px 14px; background: rgba(0,0,0,0.35); border:1px solid var(--stroke-soft); border-radius:16px; padding:14px 16px; font-family: var(--mono); font-size:0.75rem; max-height:210px; overflow-y:auto; }
+  .log-line{ color:var(--ink-dim); line-height:1.7; white-space:pre-wrap; word-break:break-all; }
+  .log-line .tag{ color:var(--mint-dim); }
+  .log-line.ok .tag{ color: var(--mint); }
+  .log-line.warn .tag{ color: var(--amber); }
+  .log-line.err .tag{ color: var(--red); }
+
+  .status{ margin:0 14px 16px; padding:14px 16px; border-radius:14px; font-family: var(--sans); font-size:0.85rem; font-weight:600; display:none; background: rgba(255,255,255,0.04); border:1px solid var(--stroke-soft); }
+  .status.show{ display:block; }
+  .status.ok{ color: var(--mint); border-color: rgba(48,224,160,0.3); }
+  .status.err{ color: var(--red); border-color: rgba(255,107,107,0.3); }
+
+  .section-label{ width:100%; max-width:640px; margin:32px 0 12px; font-family: var(--sans); font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color: var(--ink-dim); font-weight:600; display:flex; align-items:center; gap:10px; }
+  .section-label::after{ content:''; flex:1; height:1px; background: var(--stroke-soft); }
+
+  #refs{ width:100%; max-width:640px; background: var(--glass); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border:1px solid var(--stroke); border-radius:22px; padding:6px; display:none; box-shadow: 0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1); }
+  #refs.show{ display:block; }
+  .ref-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-family: var(--mono); font-size:0.76rem; color: var(--ink-dim); padding:11px 12px; margin:2px; border-radius:14px; word-break:break-all; transition: background 0.2s ease; }
+  .ref-row:hover{ background: rgba(255,255,255,0.04); }
+  .ref-row .ref-text{ flex:1; word-break:break-all; }
+  .ref-row .badge{ color: var(--amber); font-size:0.65rem; border:1px solid rgba(255,178,56,0.4); padding:2px 7px; border-radius:8px; margin-right:2px; font-weight:700; }
+  .ref-row .copy-btn{ flex-shrink:0; background: rgba(255,255,255,0.06); border:1px solid var(--stroke-soft); color: var(--ink-dim); font-family:var(--sans); font-weight:600; font-size:0.68rem; padding:5px 10px; border-radius:10px; cursor:pointer; transition: all 0.2s ease; }
+  .ref-row .copy-btn:hover{ border-color: var(--mint); color: var(--mint); background: rgba(48,224,160,0.08); }
+
+  /* ---------- toolbar: filter chips + select ---------- */
+  .toolbar{ width:100%; max-width:640px; display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; position:sticky; top:62px; z-index:20; padding:8px 2px; }
+  .chip{ padding:8px 14px; border-radius:12px; background: rgba(255,255,255,0.05); border:1px solid var(--stroke-soft); color: var(--ink-dim); font-family:var(--sans); font-size:0.74rem; font-weight:600; cursor:pointer; transition: transform 0.2s var(--spring), background 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+  .chip.active{ background: rgba(48,224,160,0.14); border-color: rgba(48,224,160,0.4); color: var(--mint); }
+  .chip:hover{ color:#fff; transform: translateY(-1px); }
+  .chip:active{ transform: scale(0.95); }
+  .toolbar .spacer{ flex:1; }
+  .toolbar .miniBtn{ padding:8px 14px; border-radius:12px; background: rgba(255,255,255,0.05); border:1px solid var(--stroke-soft); color: var(--ink); font-family:var(--sans); font-size:0.74rem; font-weight:600; cursor:pointer; transition: transform 0.2s var(--spring), border-color 0.2s ease, color 0.2s ease; }
+  .toolbar .miniBtn:hover{ border-color: rgba(48,224,160,0.4); color: var(--mint); }
+  .toolbar .miniBtn:active{ transform: scale(0.95); }
+
+  .exportbar{ width:100%; max-width:640px; display:flex; gap:8px; margin-bottom:14px; }
+  .exportbar .btn{ margin-top:0; padding:11px; }
+
+  #gallery{ width:100%; max-width:640px; display:grid; grid-template-columns:1fr; gap:20px; }
+  @media (min-width:860px){
+    .head, .panel, #refs, .section-label, .toolbar, .exportbar, .historyrow{ max-width:900px; }
+    #gallery{ max-width:900px; grid-template-columns: repeat(2, 1fr); align-items:start; }
+  }
+  @media (min-width:1200px){
+    .head, .panel, #refs, .section-label, .toolbar, .exportbar, .historyrow{ max-width:1180px; }
+    #gallery{ max-width:1180px; grid-template-columns: repeat(3, 1fr); }
+  }
+  @keyframes cardIn{ from{ opacity:0; transform: translateY(18px) scale(0.98);} to{ opacity:1; transform: translateY(0) scale(1);} }
+  .card{ position:relative; background: var(--glass); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border:1px solid var(--stroke); border-radius:28px; padding:16px; box-shadow: 0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12); transition: transform 0.35s var(--spring), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease); animation: cardIn 0.55s var(--ease) both; overflow:hidden; }
+  .card::before{ content:''; position:absolute; top:0; left:-60%; width:40%; height:100%; background: linear-gradient(115deg, transparent, rgba(255,255,255,0.10), transparent); transform: skewX(-20deg); transition: left 0.85s ease; pointer-events:none; }
+  .card:hover::before{ left:130%; }
+  .card:hover{ transform: translateY(-4px); border-color: rgba(48,224,160,0.35); box-shadow: 0 26px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(48,224,160,0.1), inset 0 1px 0 rgba(255,255,255,0.14); }
+  .card.hidden-filter{ display:none; }
+
+  .card-head{ display:flex; justify-content:space-between; align-items:center; font-family: var(--mono); font-size:0.7rem; color: var(--ink-dim); margin-bottom:10px; letter-spacing:0.03em; gap:8px; }
+  .card-head .left{ display:flex; align-items:center; gap:8px; }
+  .card-head .idx{ color: var(--mint); font-weight:700; }
+  .card-head .dim{ color: var(--ink-dim); font-family:var(--mono); }
+  .cb{ width:18px; height:18px; border-radius:6px; border:1.5px solid var(--stroke); background: rgba(0,0,0,0.3); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.15s var(--spring); }
+  .cb.checked{ background: var(--mint); border-color: var(--mint); }
+  .cb.checked::after{ content:'✓'; color:#04150e; font-size:0.7rem; font-weight:900; }
+
+  .imgwrap{ width:100%; min-height:120px; background:rgba(0,0,0,0.3); border-radius:18px; border:1px solid var(--stroke-soft); display:flex; align-items:center; justify-content:center; overflow:auto; cursor: zoom-in; position:relative; }
+  .imgwrap img{ max-width:100%; max-height:70vh; height:auto; width:auto; display:block; object-fit:contain; opacity:1; transition: opacity 0.4s var(--ease); }
+  .imgwrap.loading img{ opacity:0; }
+  .imgwrap.loading::after{
+    content:''; position:absolute; inset:0; border-radius:18px;
+    background: linear-gradient(100deg, rgba(255,255,255,0.02) 30%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 70%);
+    background-size:200% 100%; animation: shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes shimmer{ 0%{ background-position:160% 0; } 100%{ background-position:-60% 0; } }
+  .imgwrap .broken{ padding:40px 20px; text-align:center; font-family:var(--sans); font-size:0.8rem; color: var(--ink-dim); line-height:1.7; }
+  .imgwrap .broken .path{ color:var(--amber); word-break:break-all; display:block; margin-top:8px; font-family:var(--mono); }
+
+  .sharelink{ display:none; margin-top:10px; padding:10px; background: rgba(48,224,160,0.08); border:1px solid rgba(48,224,160,0.3); border-radius:14px; }
+  .sharelink.show{ display:flex; gap:8px; }
+  .sharelink input{ flex:1; padding:9px 10px; border-radius:10px; background: rgba(0,0,0,0.3); border:1px solid var(--stroke-soft); color:#fff; font-family:var(--mono); font-size:0.72rem; outline:none; min-width:0; }
+  .sharelink button{ flex-shrink:0; padding:9px 12px; border-radius:10px; background: var(--mint); color:#04150e; border:none; font-family:var(--sans); font-weight:700; font-size:0.72rem; cursor:pointer; transition: transform 0.2s var(--spring); }
+  .sharelink button:active{ transform: scale(0.92); }
+
+  .historyrow{ width:100%; max-width:640px; display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:6px; -webkit-overflow-scrolling:touch; }
+  .historyrow::-webkit-scrollbar{ height:4px; }
+  .history-chip{ flex-shrink:0; padding:9px 14px; border-radius:14px; background: rgba(255,255,255,0.05); border:1px solid var(--stroke-soft); color: var(--ink-dim); font-family:var(--sans); font-size:0.72rem; font-weight:600; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; transition: transform 0.2s var(--spring), border-color 0.2s ease, color 0.2s ease; }
+  .history-chip:hover{ border-color: rgba(48,224,160,0.4); color:#fff; transform: translateY(-1px); }
+  .history-chip:active{ transform: scale(0.95); }
+  .history-chip .cnt{ color: var(--mint); font-weight:700; }
+
+  .optrow{ display:flex; gap:6px; margin-top:10px; }
+  .optrow select{
+    flex:1; padding:8px 10px; border-radius:10px; background: rgba(0,0,0,0.3);
+    border:1px solid var(--stroke-soft); color:#fff; font-family:var(--sans); font-size:0.72rem;
+    outline:none; cursor:pointer;
+  }
+  .optrow select option{ background:#0a0f1c; }
+
+  .exifpanel{ display:none; margin-top:10px; padding:12px; background: rgba(0,0,0,0.3); border:1px solid var(--stroke-soft); border-radius:14px; font-family:var(--mono); font-size:0.72rem; }
+  .exifpanel.show{ display:block; }
+  .exifpanel .row{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-bottom:1px solid var(--stroke-soft); color: var(--ink-dim); }
+  .exifpanel .row:last-child{ border-bottom:none; }
+  .exifpanel .row b{ color:#fff; font-weight:600; text-align:right; word-break:break-all; }
+  .exifpanel .empty-exif{ color: var(--ink-dim); text-align:center; padding:6px 0; }
+
+  .btnrow{ display:flex; gap:8px; margin-top:14px; }
+  .btnrow .btn{ margin-top:0; }
+  .btn.secondary{ background: rgba(255,255,255,0.06); border:1px solid var(--stroke); color: var(--ink); }
+  .btn.secondary:hover{ background: rgba(255,255,255,0.1); border-color: rgba(48,224,160,0.4); color:#fff; }
+
+  .lightbox{ display:none; position:fixed; inset:0; background:rgba(4,8,14,0.85); z-index:200; align-items:center; justify-content:center; padding:30px; cursor: zoom-out; backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%); }
+  .lightbox.show{ display:flex; }
+  .lightbox img{ max-width:100%; max-height:100%; border-radius:18px; box-shadow:0 30px 90px rgba(0,0,0,0.6); animation: cardIn 0.35s var(--spring) both; }
+  .lightbox .close{ position:absolute; top:24px; right:26px; font-family:var(--sans); color:#fff; font-size:0.82rem; font-weight:600; background: rgba(255,255,255,0.1); border:1px solid var(--stroke); padding:8px 14px; border-radius:14px; backdrop-filter: blur(10px); }
+
+  .mapmodal{ display:none; position:fixed; inset:0; background:rgba(4,8,14,0.88); z-index:210; align-items:center; justify-content:center; padding:16px; backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%); }
+  .mapmodal.show{ display:flex; }
+  .mapmodal-inner{ width:100%; max-width:900px; height:85vh; background: var(--glass); border:1px solid var(--stroke); border-radius:28px; overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 30px 90px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.14); animation: cardIn 0.35s var(--spring) both; }
+  .sheet-handle{ display:none; }
+  @media (max-width: 700px){
+    .mapmodal{ align-items:flex-end; padding:0; }
+    .mapmodal-inner{ height:88vh; max-width:100%; border-radius:24px 24px 0 0; animation: sheetUp 0.4s var(--spring) both; transition: transform 0.3s var(--ease); }
+    .sheet-handle{ display:block; width:36px; height:5px; border-radius:3px; background: rgba(255,255,255,0.28); margin:10px auto 0; flex-shrink:0; }
+  }
+  @keyframes sheetUp{ from{ transform: translateY(100%); } to{ transform: translateY(0); } }
+  .mapmodal-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; font-family:var(--sans); font-weight:600; font-size:0.85rem; color:#fff; border-bottom:1px solid var(--stroke-soft); flex-shrink:0; }
+  .mapmodal-head .close{ cursor:pointer; background: rgba(255,255,255,0.1); border:1px solid var(--stroke); padding:6px 12px; border-radius:12px; font-size:0.78rem; transition: transform 0.2s var(--spring); }
+  .mapmodal-head .close:active{ transform: scale(0.9); }
+  #mapContainer{ flex:1; min-height:0; background:#0a0f1c; }
+  #mapContainer .leaflet-popup-content-wrapper{ background: #10151f; color:#fff; border-radius:14px; }
+  #mapContainer .leaflet-popup-tip{ background:#10151f; }
+  #mapContainer .leaflet-popup-content img{ width:140px; border-radius:10px; display:block; margin-bottom:6px; }
+  #mapContainer .leaflet-popup-content{ font-family:var(--sans); font-size:0.75rem; }
+  .gps-pin-icon{ background: var(--mint); width:14px; height:14px; border-radius:50% 50% 50% 0; transform: rotate(-45deg); border:2px solid #04150e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+  .btn{ margin-top:14px; width:100%; padding:14px; border:none; border-radius:18px; font-family:var(--sans); font-weight:700; font-size:0.88rem; cursor:pointer; background: linear-gradient(135deg, var(--mint), #21b98a); color:#04150e; box-shadow: 0 8px 20px rgba(48,224,160,0.28), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.08); transition: transform 0.25s var(--spring), box-shadow 0.25s var(--ease), background 0.18s ease; }
+  .btn:hover{ transform:translateY(-2px); box-shadow: 0 12px 26px rgba(48,224,160,0.36), inset 0 1px 0 rgba(255,255,255,0.45); }
+  .btn:active{ transform: translateY(0) scale(0.96); }
+  .btn:disabled{ background:rgba(255,255,255,0.08); color:#8a9a94; box-shadow:none; cursor:not-allowed; transform:none; }
+
+
+  .empty{ width:100%; max-width:640px; text-align:center; padding:30px 10px; color: var(--ink-dim); font-family:var(--sans); font-size:0.85rem; }
+
+  .langrow{ display:flex; justify-content:flex-end; margin-bottom:12px; }
+  #langSelect{
+    background: rgba(255,255,255,0.06); border:1px solid var(--stroke-soft); color:#fff;
+    font-family: var(--sans); font-size:0.76rem; font-weight:600; padding:8px 12px;
+    border-radius:12px; cursor:pointer; outline:none; backdrop-filter: blur(10px);
+    -webkit-appearance:none; appearance:none;
+  }
+  #langSelect option{ background:#0a0f1c; color:#fff; }
+  html[dir="rtl"] .langrow{ justify-content:flex-start; }
+  html[dir="rtl"] body{ direction:rtl; }
+  html[dir="rtl"] .card-head .left, html[dir="rtl"] .btnrow, html[dir="rtl"] .sharelink, html[dir="rtl"] .switchrow, html[dir="rtl"] .ref-row{ direction:rtl; }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.15); border-radius:4px; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+
+  <div class="island" id="island">
+    <span class="dot"></span>
+    <span id="islandText" data-i18n="ready">Ready</span>
+    <div class="bar" id="islandBar"></div>
+  </div>
+
+  <div class="head">
+    <div class="langrow">
+      <select id="langSelect">
+        <option value="en">🇬🇧 English</option>
+        <option value="bn">🇧🇩 বাংলা</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="pt">🇵🇹 Português</option>
+        <option value="id">🇮🇩 Indonesia</option>
+        <option value="zh">🇨🇳 中文</option>
+        <option value="ru">🇷🇺 Русский</option>
+      </select>
+    </div>
+    <h1>Image <span>Extract</span></h1>
+    <div class="credit">by MH Rafi</div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs" id="tabsRow">
+      <div class="tab-indicator" id="tabIndicator"></div>
+      <button class="tab active" id="tabFile" data-mode="file"><span data-i18n="tabFile">📁 File</span></button>
+      <button class="tab" id="tabUrl" data-mode="url"><span data-i18n="tabUrl">🔗 Link</span></button>
+      <button class="tab" id="tabPdf" data-mode="pdf"><span data-i18n="tabPdf">📄 PDF</span></button>
+      <button class="tab" id="tabExif" data-mode="exif"><span data-i18n="tabExif">🖼️ Photo</span></button>
+    </div>
+
+    <div class="baserow" style="padding-top:0;">
+      <input type="text" id="imgbbKeyInput" data-i18n-placeholder="imgbbPlaceholder" placeholder="ImgBB API key (optional, for share links) — free from api.imgbb.com">
+    </div>
+
+    <div class="drop" id="dropZone">
+      <span class="drop-icon">&lt;/&gt;</span>
+      <b data-i18n="dropTitle">Choose a file or drag it here</b>
+      <small data-i18n="dropSub">.html · .php · .htm · .txt — up to 20MB</small>
+      <input type="file" id="codeFile" accept=".html,.htm,.php,.txt">
+    </div>
+    <div class="baserow" id="baseRow">
+      <input type="text" id="baseUrlInput" data-i18n-placeholder="baseUrlPlaceholder" placeholder="Site's root URL (optional) — for resolving relative paths">
+    </div>
+
+    <div class="drop" id="dropZonePdf" style="display:none;">
+      <span class="drop-icon">📄</span>
+      <b data-i18n="pdfDropTitle">Choose a PDF or drag it here</b>
+      <small data-i18n="pdfDropSub">Extracts embedded images, or renders the page if none found — up to 25MB</small>
+      <input type="file" id="pdfFile" accept=".pdf,application/pdf">
+    </div>
+
+    <div id="exifModeWrap" style="display:none;">
+      <div class="drop" id="dropZoneExifBox">
+        <span class="drop-icon">🖼️</span>
+        <b data-i18n="exifDropTitle">Choose a photo or drag it here</b>
+        <small data-i18n="exifDropSub">Instantly view EXIF metadata & GPS location — JPEG works best</small>
+        <input type="file" id="photoFile" accept="image/*">
+      </div>
+      <div id="photoInfoResult" style="display:none; padding:0 14px 14px;">
+        <div class="imgwrap" style="margin-bottom:10px; min-height:0;">
+          <img id="photoInfoPreview" style="max-width:100%; max-height:50vh; border-radius:14px; display:block; margin:0 auto;">
+        </div>
+        <div class="exifpanel show" id="photoInfoExif"></div>
+        <div id="photoInfoMap" style="display:none; height:240px; border-radius:14px; overflow:hidden; margin-top:10px;"></div>
+        <details id="photoInfoDebug" style="margin-top:10px; display:none;">
+          <summary style="cursor:pointer; font-family:var(--sans); font-size:0.74rem; color:var(--ink-dim);">🔍 Technical details (for debugging)</summary>
+          <pre id="photoInfoDebugContent" style="margin-top:8px; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--stroke-soft); border-radius:12px; font-family:var(--mono); font-size:0.68rem; color:var(--ink-dim); overflow-x:auto; white-space:pre-wrap; word-break:break-all;"></pre>
+        </details>
+      </div>
+    </div>
+
+    <div class="urlrow" id="urlRow">
+      <textarea id="urlInput" data-i18n-placeholder="urlPlaceholder" placeholder="One or more links (one per line)&#10;https://example.com/page.php"></textarea>
+      <div class="switchrow">
+        <label data-i18n="crawlLabel">🕸️ Scan across the site (also checks internal links)</label>
+        <div class="ios-switch"><input type="checkbox" id="crawlToggle"><div class="track"></div><div class="knob"></div></div>
+      </div>
+      <div class="switchrow">
+        <label data-i18n="cssLabel">🎨 Also search CSS files for images</label>
+        <div class="ios-switch"><input type="checkbox" id="cssToggle" checked><div class="track"></div><div class="knob"></div></div>
+      </div>
+      <button class="btn" id="urlGoBtn" data-i18n="scanBtn">Scan</button>
+    </div>
+
+    <div class="filebar" id="filebar">
+      <span class="name" id="fname"></span>
+      <button class="clear" id="clearBtn" data-i18n="clearBtn">Clear</button>
+    </div>
+
+    <div class="progwrap" id="progwrap">
+      <div class="progbar"><i id="progbarFill"></i></div>
+      <div class="progtext" id="progtext"></div>
+    </div>
+
+    <div id="logPanel"></div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div class="historyrow" id="historyRow" style="display:none;"></div>
+
+  <div class="section-label" id="refsLabel" style="display:none;" data-i18n="refsLabel">Reference links</div>
+  <div id="refs"></div>
+
+  <div class="section-label" id="galleryLabel" style="display:none;" data-i18n="galleryLabel">Extracted images</div>
+  <div class="toolbar" id="toolbar" style="display:none;"></div>
+  <div class="exportbar" id="exportbar" style="display:none;">
+    <button class="btn secondary" id="selAllBtn" style="margin-top:0;" data-i18n="selectAllBtn">Select all</button>
+    <button class="btn secondary" id="gpsMapBtn" style="margin-top:0;">🗺️ <span data-i18n="mapBtn">Map</span></button>
+    <button class="btn secondary" id="dupBtn" style="margin-top:0;">🔁 <span data-i18n="dupBtn">Duplicates</span></button>
+    <button class="btn secondary" id="exportJsonBtn" style="margin-top:0;">JSON</button>
+    <button class="btn secondary" id="exportCsvBtn" style="margin-top:0;">CSV</button>
+  </div>
+  <div class="exportbar" id="downloadbar" style="display:none;">
+    <button class="btn" id="downloadSelectedBtn"><span data-i18n="dlSelected">⬇ Selected ZIP</span> (<span id="selCount">0</span>)</button>
+    <button class="btn" id="downloadAllBtn" data-i18n="dlAll">⬇ Download all as ZIP</button>
+  </div>
+  <div id="gallery"></div>
+
+  <div class="lightbox" id="lightbox">
+    <span class="close" data-i18n="closeBtn">✕ Close</span>
+    <img id="lightboxImg" src="">
+  </div>
+
+  <div class="mapmodal" id="mapModal">
+    <div class="mapmodal-inner" id="mapModalInner">
+      <div class="sheet-handle"></div>
+      <div class="mapmodal-head">
+        <span id="mapModalTitle" data-i18n="mapScanning">Scanning photos for GPS data…</span>
+        <span class="close" id="mapModalClose">✕</span>
+      </div>
+      <div id="mapContainer"></div>
+    </div>
+  </div>
+
+  <div class="mapmodal" id="dupModal">
+    <div class="mapmodal-inner" id="dupModalInner">
+      <div class="sheet-handle"></div>
+      <div class="mapmodal-head">
+        <span id="dupModalTitle" data-i18n="dupScanning">Scanning for similar/duplicate images…</span>
+        <span class="close" id="dupModalClose">✕</span>
+      </div>
+      <div id="dupContainer" style="flex:1; overflow-y:auto; padding:14px;"></div>
+    </div>
+  </div>
+
+<script>
+/* ============================= WEB WORKER ============================= */
+function decodeEntitiesPure(s) {
+  const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (m, h) => String.fromCodePoint(parseInt(h, 16)));
+  s = s.replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(parseInt(d, 10)));
+  s = s.replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (m, n) => named[n] || m);
+  if (/%[0-9A-Fa-f]{2}/.test(s)) { try { s = decodeURIComponent(s); } catch (e) {} }
+  return s.trim();
+}
+function normalizeSourceText(t) { return t.replace(/\\\//g, '/').replace(/\\"/g, '"'); }
+function resolveUrlPure(path, baseUrl) {
+  path = decodeEntitiesPure(path);
+  if (!path) return path;
+  if (path.startsWith('data:')) return path;
+  if (!baseUrl) return path;
+  try { return new URL(path, baseUrl).href; } catch (e) { return path; }
+}
+function safeExecPure(regex, text, onMatch, cap) {
+  cap = cap || 20000; let count = 0; let m;
+  while ((m = regex.exec(text)) !== null) {
+    onMatch(m); count++;
+    if (count >= cap) break;
+    if (m[0].length === 0) regex.lastIndex++;
+  }
+}
+function extractFromHtml(rawText, baseUrl) {
+  const text = normalizeSourceText(rawText);
+  const IMG_EXT = 'png|jpe?g|jfif|pjpeg|gif|webp|svg|bmp|ico|cur|avif|heic|heif|tiff?|jp2|jpx|jxl';
+  const VID_EXT = 'mp4|m4v|webm|ogv|mov|avi|mkv|3gp|3g2|flv|wmv|mpg|mpeg|ts|mts|m2ts|vob|m3u8';
+  const AUD_EXT = 'mp3|wav|m4a|aac|flac|wma|opus|weba|ogg|oga|mid|midi|amr|aiff?|ac3|m3u';
+  const images = []; const refs = []; const stylesheets = []; const links = [];
+  const push = (u) => { if (u && !images.includes(u)) images.push(u); };
+  const seenRefs = {};
+
+  safeExecPure(/<img[^>]+src=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/data-(?:src|lazy-src|original|bg|background|lazy)=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/srcset=["']([^"']+)["']/gi, text, m => {
+    m[1].split(',').forEach(part => {
+      const u = part.trim().split(/\s+/)[0];
+      if (u) push(resolveUrlPure(u, baseUrl));
+    });
+  });
+  safeExecPure(/data-srcset=["']([^"']+)["']/gi, text, m => {
+    m[1].split(',').forEach(part => {
+      const u = part.trim().split(/\s+/)[0];
+      if (u) push(resolveUrlPure(u, baseUrl));
+    });
+  });
+  safeExecPure(/<link[^>]+rel=["'](?:shortcut icon|icon|apple-touch-icon|apple-touch-icon-precomposed|mask-icon)["'][^>]*href=["']([^"']+)["']|<link[^>]+href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon|apple-touch-icon-precomposed|mask-icon)["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(/<meta[^>]+(?:property|name)=["'](?:og:image(?::url|:secure_url)?|twitter:image(?::src)?)["'][^>]*content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image(?::url|:secure_url)?|twitter:image(?::src)?)["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(/<meta[^>]+itemprop=["']image["'][^>]*content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]*itemprop=["']image["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(/<video[^>]+poster=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<input[^>]+type=["']image["'][^>]*src=["']([^"']+)["']|<input[^>]+src=["']([^"']+)["'][^>]*type=["']image["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(new RegExp(`<object[^>]+data=["']([^"']+\\.(?:${IMG_EXT}))["']`, 'gi'), text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(new RegExp(`<embed[^>]+src=["']([^"']+\\.(?:${IMG_EXT}))["']`, 'gi'), text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<image[^>]+(?:xlink:href|href)=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<svg[\s\S]*?<\/svg>/gi, text, m => {
+    try { images.push('data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(m[0])))); } catch (e) {}
+  }, 500);
+  safeExecPure(/data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+\/=]+/g, text, m => push(m[0]), 500);
+  safeExecPure(/(?:background(?:-image)?|mask(?:-image)?|-webkit-mask-image|border-image(?:-source)?|list-style-image)\s*:\s*[^;]*?url\(["']?([^"')]+)["']?\)/gi,
+    text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/image-set\(\s*["']?([^"',)]+)["']?/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+
+  /* ---- video & audio ---- */
+  safeExecPure(/<video[^>]+src=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<audio[^>]+src=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<source[^>]+src=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/<track[^>]+src=["']([^"']+)["']/gi, text, m => push(resolveUrlPure(m[1], baseUrl))); // subtitles/captions track
+  safeExecPure(/<meta[^>]+(?:property|name)=["'](?:og:video(?::url|:secure_url)?|og:audio(?::url|:secure_url)?)["'][^>]*content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:video(?::url|:secure_url)?|og:audio(?::url|:secure_url)?)["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(/<link[^>]+rel=["']preload["'][^>]*as=["'](?:video|audio)["'][^>]*href=["']([^"']+)["']|<link[^>]+href=["']([^"']+)["'][^>]*as=["'](?:video|audio)["'][^>]*rel=["']preload["']/gi,
+    text, m => push(resolveUrlPure(m[1] || m[2], baseUrl)));
+  safeExecPure(new RegExp(`<object[^>]+data=["']([^"']+\\.(?:${VID_EXT}|${AUD_EXT}))["']`, 'gi'), text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(new RegExp(`<embed[^>]+src=["']([^"']+\\.(?:${VID_EXT}|${AUD_EXT}))["']`, 'gi'), text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/data:(?:video|audio)\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+\/=]+/g, text, m => push(m[0]), 200);
+
+  /* ---- broad pass: any quoted path ending in a known image/video/audio extension, anywhere (JS/JSON/config) ---- */
+  safeExecPure(new RegExp(`["']([^"'\\s]{4,600}\\.(?:${IMG_EXT}|${VID_EXT}|${AUD_EXT})(?:\\?[^"'\\s]*)?)["']`, 'gi'),
+    text, m => push(resolveUrlPure(m[1], baseUrl)));
+
+  safeExecPure(/(?:href|src|action)=["']([^"']+)["']/gi, text, m => {
+    const val = decodeEntitiesPure(m[1]);
+    if ((val.includes('.php') || val.includes('/api')) && !seenRefs[val]) { seenRefs[val] = 1; refs.push(val); }
+  });
+
+  safeExecPure(/<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["']|<link[^>]+href=["']([^"']+)["'][^>]*rel=["']stylesheet["']/gi,
+    text, m => { const u = resolveUrlPure(m[1] || m[2], baseUrl); if (u && !stylesheets.includes(u)) stylesheets.push(u); });
+
+  if (baseUrl) {
+    let origin = null; try { origin = new URL(baseUrl).origin; } catch (e) {}
+    if (origin) {
+      safeExecPure(/<a[^>]+href=["']([^"']+)["']/gi, text, m => {
+        const raw = m[1];
+        if (/^(mailto:|tel:|javascript:|#)/i.test(raw)) return;
+        const u = resolveUrlPure(raw, baseUrl);
+        try {
+          const parsed = new URL(u);
+          if (parsed.origin === origin && !/\.(png|jpe?g|jfif|gif|webp|svg|bmp|ico|cur|avif|heic|heif|tiff?|jp2|jpx|jxl|css|js|zip|pdf|mp4|m4v|webm|ogv|mov|avi|mkv|3gp|3g2|flv|wmv|mpg|mpeg|ts|mts|m2ts|vob|m3u8|mp3|wav|m4a|aac|flac|wma|opus|weba|ogg|oga|mid|midi|amr|aiff?|ac3|m3u)$/i.test(parsed.pathname)) {
+            if (!links.includes(parsed.href)) links.push(parsed.href);
+          }
+        } catch (e) {}
+      }, 500);
+    }
+  }
+  return { images, refs, stylesheets, links: links.slice(0, 30) };
+}
+function extractFromCss(rawText, baseUrl) {
+  const text = normalizeSourceText(rawText);
+  const images = [];
+  const push = (u) => { if (u && !images.includes(u)) images.push(u); };
+  safeExecPure(/url\(["']?([^"')]+)["']?\)/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  safeExecPure(/image-set\(\s*["']?([^"',)]+)["']?/gi, text, m => push(resolveUrlPure(m[1], baseUrl)));
+  return { images, refs: [], stylesheets: [], links: [] };
+}
+
+/* Try to build a Web Worker from the functions above (for perf on huge files).
+   If the environment blocks Worker/blob construction (e.g. some sandboxed
+   previews), we transparently fall back to running the same functions on
+   the main thread — extraction always works either way. */
+let worker = null;
+let msgId = 0;
+const pending = {};
+try {
+  const workerFns = [decodeEntitiesPure, normalizeSourceText, resolveUrlPure, safeExecPure, extractFromHtml, extractFromCss]
+    .map(f => f.toString()).join('\n\n');
+  const workerSrc = workerFns + `
+self.onmessage = function(e){
+  const { id, text, baseUrl, isCss } = e.data;
+  let result;
+  try{
+    result = isCss ? extractFromCss(text, baseUrl) : extractFromHtml(text, baseUrl);
+  }catch(err){
+    result = { images:[], refs:[], stylesheets:[], links:[], error: err.message };
+  }
+  self.postMessage({ id, result });
+};`;
+  const workerBlob = new Blob([workerSrc], { type: 'application/javascript' });
+  worker = new Worker(URL.createObjectURL(workerBlob));
+  worker.onmessage = (e) => {
+    const { id, result } = e.data;
+    if (pending[id]) { pending[id](result); delete pending[id]; }
+  };
+  worker.onerror = () => { worker = null; }; // future calls fall back to main thread
+} catch (e) {
+  worker = null; // blocked by sandbox/CSP — will use main-thread fallback below
+}
+
+function scanText(text, baseUrl, isCss) {
+  if (worker) {
+    return new Promise(resolve => {
+      const id = ++msgId;
+      pending[id] = resolve;
+      try {
+        worker.postMessage({ id, text, baseUrl: baseUrl || null, isCss: !!isCss });
+      } catch (e) {
+        delete pending[id];
+        resolve(isCss ? extractFromCss(text, baseUrl) : extractFromHtml(text, baseUrl));
+      }
+    });
+  }
+  // main-thread fallback — same logic, just synchronous
+  try {
+    return Promise.resolve(isCss ? extractFromCss(text, baseUrl) : extractFromHtml(text, baseUrl));
+  } catch (err) {
+    return Promise.resolve({ images: [], refs: [], stylesheets: [], links: [], error: err.message });
+  }
+}
+
+/* ============================= DOM refs ============================= */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('codeFile');
+const filebar = document.getElementById('filebar');
+const fname = document.getElementById('fname');
+const clearBtn = document.getElementById('clearBtn');
+const logPanel = document.getElementById('logPanel');
+const status = document.getElementById('status');
+const refs = document.getElementById('refs');
+const refsLabel = document.getElementById('refsLabel');
+const gallery = document.getElementById('gallery');
+const galleryLabel = document.getElementById('galleryLabel');
+const historyRow = document.getElementById('historyRow');
+const toolbar = document.getElementById('toolbar');
+const exportbar = document.getElementById('exportbar');
+const downloadbar = document.getElementById('downloadbar');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+const selAllBtn = document.getElementById('selAllBtn');
+const selCountEl = document.getElementById('selCount');
+const exportJsonBtn = document.getElementById('exportJsonBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const tabFile = document.getElementById('tabFile');
+const tabUrl = document.getElementById('tabUrl');
+const tabPdf = document.getElementById('tabPdf');
+const dropZonePdf = document.getElementById('dropZonePdf');
+const pdfFile = document.getElementById('pdfFile');
+const tabExif = document.getElementById('tabExif');
+const exifModeWrap = document.getElementById('exifModeWrap');
+const dropZoneExifBox = document.getElementById('dropZoneExifBox');
+const photoFile = document.getElementById('photoFile');
+const photoInfoResult = document.getElementById('photoInfoResult');
+const photoInfoPreview = document.getElementById('photoInfoPreview');
+const photoInfoExif = document.getElementById('photoInfoExif');
+const photoInfoMap = document.getElementById('photoInfoMap');
+const photoInfoDebug = document.getElementById('photoInfoDebug');
+const photoInfoDebugContent = document.getElementById('photoInfoDebugContent');
+const urlRow = document.getElementById('urlRow');
+const urlInput = document.getElementById('urlInput');
+const urlGoBtn = document.getElementById('urlGoBtn');
+const baseRow = document.getElementById('baseRow');
+const baseUrlInput = document.getElementById('baseUrlInput');
+const imgbbKeyInput = document.getElementById('imgbbKeyInput');
+const crawlToggle = document.getElementById('crawlToggle');
+const cssToggle = document.getElementById('cssToggle');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+const island = document.getElementById('island');
+const islandText = document.getElementById('islandText');
+const islandBar = document.getElementById('islandBar');
+const progwrap = document.getElementById('progwrap');
+const progbarFill = document.getElementById('progbarFill');
+const progtext = document.getElementById('progtext');
+
+const MAX_SIZE = 20 * 1024 * 1024;
+let allImages = []; // {url, format, kind, width, height}
+let allRefs = [];
+let selected = new Set();
+let activeFilter = 'all';
+let scanHistory = []; // {type, label, urls?, count, time}
+let pendingScanMeta = null;
+
+function addToHistory(count) {
+  if (!pendingScanMeta) return;
+  scanHistory.unshift({ ...pendingScanMeta, count, time: Date.now() });
+  scanHistory = scanHistory.slice(0, 10);
+  pendingScanMeta = null;
+  renderHistory();
+}
+function renderHistory() {
+  if (!scanHistory.length) { historyRow.style.display = 'none'; return; }
+  historyRow.style.display = 'flex';
+  historyRow.innerHTML = '';
+  const icons = { file: '📁', url: '🔗', pdf: '📄' };
+  scanHistory.forEach(entry => {
+    const chip = document.createElement('button');
+    chip.className = 'history-chip';
+    const shortLabel = entry.label.length > 24 ? entry.label.slice(0, 24) + '…' : entry.label;
+    chip.innerHTML = `${icons[entry.type] || '•'} ${escapeHtml(shortLabel)} <span class="cnt">${entry.count}</span>`;
+    chip.title = entry.label;
+    chip.onclick = () => {
+      vibrate(8);
+      if (entry.type === 'url' && entry.urls) {
+        activateTab(tabUrl, 'url');
+        urlInput.value = entry.urls.join('\n');
+        urlGoBtn.click();
+      }
+    };
+    historyRow.appendChild(chip);
+  });
+}
+
+function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+/* ---------- lazy media loading: only fetch a card's actual image/video/audio
+   source once it scrolls near the viewport, instead of firing hundreds of
+   requests at once for a big batch ---------- */
+const lazyObserver = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const cb = entry.target.__lazyLoad;
+      if (cb) { entry.target.__lazyLoad = null; cb(); }
+      lazyObserver.unobserve(entry.target);
+    }
+  });
+}, { rootMargin: '600px 0px', threshold: 0.01 }) : null;
+function registerLazy(el, loadFn) {
+  if (!lazyObserver) { loadFn(); return; }
+  el.__lazyLoad = loadFn;
+  lazyObserver.observe(el);
+}
+
+/* ============================= i18n ============================= */
+const I18N = {
+  en: { tabFile:'📁 File', tabUrl:'🔗 Link', tabPdf:'📄 PDF',
+    dropTitle:'Choose a file or drag it here', dropSub:'.html · .php · .htm · .txt — up to 20MB',
+    pdfDropTitle:'Choose a PDF or drag it here', pdfDropSub:'Extracts embedded images, or renders the page if none found — up to 25MB',
+    baseUrlPlaceholder:"Site's root URL (optional) — for resolving relative paths",
+    urlPlaceholder:'One or more links (one per line)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Scan across the site (also checks internal links)', cssLabel:'🎨 Also search CSS files for images',
+    scanBtn:'Scan', clearBtn:'Clear', refsLabel:'Reference links', galleryLabel:'Extracted images',
+    tabExif:'🖼️ Photo', exifDropTitle:'Choose a photo or drag it here', exifDropSub:'Instantly view EXIF metadata & GPS location — JPEG works best',
+    readingMetadata:'Reading metadata...', noExifFound:'No EXIF metadata found in this image.', couldNotReadMetadata:'Could not read metadata for this image.',
+    heicUnsupported:'This is a HEIC/HEIF photo (common on iPhone). This tool can\'t read HEIC metadata yet — convert it to JPEG first (e.g. share it once, or use "Most Compatible" format in Camera settings) and try again.',
+    selectAllBtn:'Select all', dlSelected:'⬇ Selected ZIP', dlAll:'⬇ Download all as ZIP', closeBtn:'✕ Close', ready:'Ready',
+    imgbbPlaceholder:'ImgBB API key (optional, for share links) — free from api.imgbb.com',
+    fileTooLarge:'✕ File is too large ({size}MB) — {max}MB max supported.',
+    readingFile:'Reading file…', fileLoaded:'File loaded: {name}', parsing:'Parsing...',
+    couldNotReadFile:'Could not read the file (likely binary).', couldNotReadFileShort:'✕ Could not read the file.',
+    errorOccurred:'An error occurred',
+    fetchingSource:'Fetching source code…', starting:'Starting...',
+    fetchingLink:'({i}/{total}) Fetching: {url}…', fetchingFrom:'Fetching source from: {url}',
+    fetchSuccess:'Success: {url}', fetchFailed:'Failed: {url} — {err}',
+    noSourceFetched:'✕ Could not fetch source code from any link.',
+    extractingLog:'Extracting images/references from source (Web Worker)...', extracting:'Extracting…',
+    foundCssFiles:'Found {n} CSS file(s), scanning them for images too...', scanningCss:'Scanning CSS…',
+    foundImagesInCss:'Found {n} image(s) in CSS: {href}', couldNotFetchCss:'Could not fetch CSS file: {href}',
+    crawlOn:'Crawl mode on — scanning {n} more page(s) on the same site...', crawling:'crawl: {link}…',
+    crawlSucceeded:'Crawl succeeded ({n} images): {link}', crawlFailed:'Crawl failed: {link}',
+    copyLabel:'Copy', copiedLabel:'Copied ✓',
+    noImageSources:'No image sources found.', noImagesFoundShort:'✕ No images found.', noImagesFoundIsland:'No images found',
+    foundImagesLog:'Found {n} unique image source(s) total. Rendering...', foundImagesStatus:'✓ Found {n} image(s).', foundImagesIsland:'✓ Found {n} image(s)',
+    allChip:'All ({n})',
+    pdfTooLarge:'✕ PDF is too large ({size}MB) — {max}MB max supported.',
+    loadingPdf:'Loading PDF…', pdfLoaded:'PDF loaded: {name}', parsingPdf:'Parsing PDF...',
+    pdfTotalPages:'Found {total} page(s) total{extra}.', pdfExtraPages:' (first {max} will be processed)',
+    scanningPages:'Scanning page {start}-{end}/{total}…', pagesDone:'{done}/{total} pages done', jobsDone:'{done}/{total} done',
+    pageEmbedded:'Page {p}: found {n} embedded image(s).', pageRendered:'Page {p}: no embedded images found, rendered the full page instead.',
+    pageError:'Problem processing page {p}.', couldNotReadPdf:'Could not read PDF: {err}',
+    couldNotReadPdfShort:'✕ Could not read this PDF — it may be corrupted or password-protected.',
+    noApiKey:'Set an ImgBB API key first', shareFailed:'Share link failed — {err}',
+    imgbbUploadError:'ImgBB upload error: {err}', conversionNotAvailable:'Conversion not available for this image, saved original instead.',
+    buildingZip:'Building ZIP...', zipFailed:'✕ No images could be added', zipZero:'ZIP failed', zipDone:'✓ {n} image(s) zipped',
+    mapBtn:'Map', mapScanning:'Scanning photos for GPS data…', mapScanningProgress:'Checking photo {done}/{total} for GPS data…',
+    mapNoneFound:'No geotagged photos', mapNoneFoundDesc:'None of the extracted photos had GPS location data embedded in their EXIF metadata.',
+    mapFound:'📍 {n} geotagged photo(s)', mapViewPhoto:'View in gallery', openInGoogleMaps:'Open in Google Maps', geoUnavailable:'📍 Address unavailable',
+    dupBtn:'Duplicates', dupScanning:'Scanning for similar/duplicate images…', dupNotEnough:'Need at least 2 images to compare',
+    dupScanningProgress:'Comparing image {done}/{total}…', dupNoneFound:'No duplicates found', dupNoneFoundDesc:'Every extracted image looks visually unique — no near-duplicates detected.',
+    dupFound:'🔁 {n} duplicate group(s) found', dupGroupLabel:'Group {n} — {count} similar images', dupSelectExtras:'Select all extras (keep first in each group)' },
+  bn: { tabFile:'📁 ফাইল', tabUrl:'🔗 লিংক', tabPdf:'📄 PDF',
+    dropTitle:'ফাইল বাছাই করো বা এখানে ড্র্যাগ করো', dropSub:'.html · .php · .htm · .txt — সর্বোচ্চ 20MB',
+    pdfDropTitle:'PDF ফাইল বাছাই করো বা এখানে ড্র্যাগ করো', pdfDropSub:'এমবেডেড ছবি বের করবে, না পেলে পুরো পেজ রেন্ডার করবে — সর্বোচ্চ 25MB',
+    baseUrlPlaceholder:'সাইটের মূল লিংক (ঐচ্ছিক) — রিলেটিভ পাথের জন্য',
+    urlPlaceholder:'একটা বা একাধিক লিংক দাও (প্রতি লাইনে একটা করে)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ সাইট জুড়ে স্ক্যান করো (একই সাইটের ভেতরের লিংকও দেখবে)', cssLabel:'🎨 CSS ফাইল থেকেও ছবি খুঁজো',
+    scanBtn:'স্ক্যান করো', clearBtn:'মুছে ফেলো', refsLabel:'রেফারেন্স লিংক', galleryLabel:'এক্সট্র্যাক্টেড ছবি',
+    tabExif:'🖼️ ছবি', exifDropTitle:'ছবি বাছাই করো বা এখানে ড্র্যাগ করো', exifDropSub:'সাথে সাথে EXIF মেটাডেটা ও GPS লোকেশন দেখো — JPEG সবচেয়ে ভালো কাজ করে',
+    readingMetadata:'মেটাডেটা পড়া হচ্ছে...', noExifFound:'এই ছবিতে কোনো EXIF মেটাডেটা পাওয়া যায়নি।', couldNotReadMetadata:'এই ছবির মেটাডেটা পড়া যায়নি।',
+    heicUnsupported:'এটা একটা HEIC/HEIF ছবি (iPhone-এ কমন ফরম্যাট)। এই টুল এখনো HEIC মেটাডেটা পড়তে পারে না — আগে JPEG-এ কনভার্ট করো (যেমন একবার শেয়ার করলেই হয়, বা Camera সেটিংসে "Most Compatible" ফরম্যাট বেছে নাও) তারপর আবার চেষ্টা করো।',
+    selectAllBtn:'সব সিলেক্ট', dlSelected:'⬇ সিলেক্টেড ZIP', dlAll:'⬇ সব ZIP ডাউনলোড', closeBtn:'✕ বন্ধ করো', ready:'প্রস্তুত',
+    imgbbPlaceholder:'ImgBB API key (শেয়ার লিংকের জন্য, ঐচ্ছিক) — api.imgbb.com থেকে ফ্রি',
+    fileTooLarge:'✕ ফাইলটা অনেক বড় ({size}MB) — সর্বোচ্চ {max}MB সাপোর্টেড।',
+    readingFile:'ফাইল পড়া হচ্ছে…', fileLoaded:'ফাইল লোড হয়েছে: {name}', parsing:'পার্স করা হচ্ছে...',
+    couldNotReadFile:'ফাইলটা পড়া যায়নি (সম্ভবত বাইনারি)।', couldNotReadFileShort:'✕ ফাইলটা পড়া যায়নি।',
+    errorOccurred:'এরর হয়েছে',
+    fetchingSource:'সোর্স কোড আনা হচ্ছে…', starting:'শুরু হচ্ছে...',
+    fetchingLink:'({i}/{total}) আনা হচ্ছে: {url}…', fetchingFrom:'লিংক থেকে সোর্স কোড আনা হচ্ছে: {url}',
+    fetchSuccess:'সফল: {url}', fetchFailed:'ব্যর্থ: {url} — {err}',
+    noSourceFetched:'✕ কোনো লিংক থেকেই সোর্স কোড আনা গেল না।',
+    extractingLog:'সোর্স কোড থেকে ইমেজ/রেফারেন্স এক্সট্র্যাক্ট করা হচ্ছে (Web Worker)...', extracting:'এক্সট্র্যাক্ট করা হচ্ছে…',
+    foundCssFiles:'{n}টি CSS ফাইল পাওয়া গেছে, সেগুলো থেকেও ছবি খোঁজা হচ্ছে...', scanningCss:'CSS স্ক্যান হচ্ছে…',
+    foundImagesInCss:'CSS-এ {n}টি ছবি পাওয়া গেছে: {href}', couldNotFetchCss:'CSS ফাইল আনা যায়নি: {href}',
+    crawlOn:'ক্রল মোড চালু — একই সাইটে আরও {n}টি পেজ স্ক্যান হচ্ছে...', crawling:'ক্রল: {link}…',
+    crawlSucceeded:'ক্রল সফল ({n}টি ছবি): {link}', crawlFailed:'ক্রল ব্যর্থ: {link}',
+    copyLabel:'কপি', copiedLabel:'কপি হয়েছে ✓',
+    noImageSources:'কোনো ইমেজ সোর্স পাওয়া যায়নি।', noImagesFoundShort:'✕ কোনো ছবি খুঁজে পাওয়া যায়নি।', noImagesFoundIsland:'কোনো ছবি পাওয়া যায়নি',
+    foundImagesLog:'মোট {n}টি ইউনিক ইমেজ সোর্স পাওয়া গেছে। রেন্ডার করা হচ্ছে...', foundImagesStatus:'✓ {n}টি ছবি পাওয়া গেছে।', foundImagesIsland:'✓ {n}টি ছবি পাওয়া গেছে',
+    allChip:'সব ({n})',
+    pdfTooLarge:'✕ PDF অনেক বড় ({size}MB) — সর্বোচ্চ {max}MB সাপোর্টেড।',
+    loadingPdf:'PDF লোড হচ্ছে…', pdfLoaded:'PDF লোড হয়েছে: {name}', parsingPdf:'PDF পার্স করা হচ্ছে...',
+    pdfTotalPages:'মোট {total}টি পেজ পাওয়া গেছে{extra}।', pdfExtraPages:' (প্রথম {max}টি প্রসেস হবে)',
+    scanningPages:'পেজ {start}-{end}/{total} স্ক্যান হচ্ছে…', pagesDone:'{done}/{total} পেজ সম্পন্ন', jobsDone:'{done}/{total} সম্পন্ন',
+    pageEmbedded:'পেজ {p}: {n}টি এমবেডেড ছবি পাওয়া গেছে।', pageRendered:'পেজ {p}: এমবেডেড ছবি পাওয়া যায়নি, পুরো পেজ রেন্ডার করা হয়েছে।',
+    pageError:'পেজ {p} প্রসেস করতে সমস্যা হয়েছে।', couldNotReadPdf:'PDF পড়া যায়নি: {err}',
+    couldNotReadPdfShort:'✕ এই PDF ফাইলটা পড়া যায়নি — corrupted বা password-protected হতে পারে।',
+    noApiKey:'আগে ImgBB API key দাও', shareFailed:'শেয়ার লিংক ব্যর্থ — {err}',
+    imgbbUploadError:'ImgBB আপলোড এরর: {err}', conversionNotAvailable:'এই ছবির জন্য কনভার্সন সাপোর্টেড না, আসল ফাইলটাই সেভ হয়েছে।',
+    buildingZip:'ZIP তৈরি হচ্ছে...', zipFailed:'✕ কোনো ছবি যোগ করা যায়নি', zipZero:'ZIP ব্যর্থ', zipDone:'✓ {n}টি ছবি ZIP করা হয়েছে',
+    mapBtn:'ম্যাপ', mapScanning:'ছবিগুলোতে GPS ডেটা খোঁজা হচ্ছে…', mapScanningProgress:'ছবি {done}/{total} চেক করা হচ্ছে…',
+    mapNoneFound:'কোনো জিও-ট্যাগড ছবি নেই', mapNoneFoundDesc:'এক্সট্র্যাক্ট করা কোনো ছবির EXIF মেটাডেটাতে GPS লোকেশন পাওয়া যায়নি।',
+    mapFound:'📍 {n}টি জিও-ট্যাগড ছবি', mapViewPhoto:'গ্যালারিতে দেখো', openInGoogleMaps:'গুগল ম্যাপে দেখো', geoUnavailable:'📍 ঠিকানা পাওয়া যায়নি',
+    dupBtn:'ডুপ্লিকেট', dupScanning:'একই রকম/ডুপ্লিকেট ছবি খোঁজা হচ্ছে…', dupNotEnough:'তুলনা করতে অন্তত ২টা ছবি লাগবে',
+    dupScanningProgress:'ছবি {done}/{total} তুলনা করা হচ্ছে…', dupNoneFound:'কোনো ডুপ্লিকেট পাওয়া যায়নি', dupNoneFoundDesc:'প্রতিটা এক্সট্র্যাক্ট করা ছবি আলাদা দেখাচ্ছে — কাছাকাছি কোনো ডুপ্লিকেট পাওয়া যায়নি।',
+    dupFound:'🔁 {n}টি ডুপ্লিকেট গ্রুপ পাওয়া গেছে', dupGroupLabel:'গ্রুপ {n} — {count}টি একই রকম ছবি', dupSelectExtras:'সব অতিরিক্ত সিলেক্ট করো (প্রতি গ্রুপে প্রথমটা রাখো)' },
+  hi: { tabFile:'📁 फ़ाइल', tabUrl:'🔗 लिंक', tabPdf:'📄 PDF',
+    dropTitle:'फ़ाइल चुनें या यहाँ खींचें', dropSub:'.html · .php · .htm · .txt — अधिकतम 20MB',
+    pdfDropTitle:'PDF फ़ाइल चुनें या यहाँ खींचें', pdfDropSub:'एम्बेडेड इमेज निकालेगा, न मिले तो पूरा पेज रेंडर करेगा — अधिकतम 25MB',
+    baseUrlPlaceholder:'साइट का मूल लिंक (वैकल्पिक) — रिलेटिव पाथ के लिए',
+    urlPlaceholder:'एक या अधिक लिंक दें (हर लाइन में एक)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ पूरी साइट स्कैन करें (आंतरिक लिंक भी देखेगा)', cssLabel:'🎨 CSS फ़ाइलों में भी इमेज खोजें',
+    scanBtn:'स्कैन करें', clearBtn:'हटाएँ', refsLabel:'संदर्भ लिंक', galleryLabel:'निकाली गई इमेजें',
+    selectAllBtn:'सभी चुनें', dlSelected:'⬇ चयनित ZIP', dlAll:'⬇ सभी ZIP डाउनलोड करें', closeBtn:'✕ बंद करें', ready:'तैयार' },
+  ar: { tabFile:'📁 ملف', tabUrl:'🔗 رابط', tabPdf:'📄 PDF',
+    dropTitle:'اختر ملفًا أو اسحبه هنا', dropSub:'.html · .php · .htm · .txt — حتى 20 ميجابايت',
+    pdfDropTitle:'اختر ملف PDF أو اسحبه هنا', pdfDropSub:'يستخرج الصور المضمّنة، أو يعرض الصفحة كاملة إن لم يجد شيئًا — حتى 25 ميجابايت',
+    baseUrlPlaceholder:'الرابط الرئيسي للموقع (اختياري) — لحل المسارات النسبية',
+    urlPlaceholder:'رابط واحد أو أكثر (كل رابط في سطر)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ فحص الموقع بالكامل (يتحقق من الروابط الداخلية أيضًا)', cssLabel:'🎨 ابحث أيضًا في ملفات CSS عن الصور',
+    scanBtn:'فحص', clearBtn:'مسح', refsLabel:'روابط مرجعية', galleryLabel:'الصور المستخرجة',
+    selectAllBtn:'تحديد الكل', dlSelected:'⬇ تنزيل المحدد ZIP', dlAll:'⬇ تنزيل الكل ZIP', closeBtn:'✕ إغلاق', ready:'جاهز' },
+  es: { tabFile:'📁 Archivo', tabUrl:'🔗 Enlace', tabPdf:'📄 PDF',
+    dropTitle:'Elige un archivo o arrástralo aquí', dropSub:'.html · .php · .htm · .txt — hasta 20MB',
+    pdfDropTitle:'Elige un PDF o arrástralo aquí', pdfDropSub:'Extrae imágenes incrustadas, o renderiza la página si no encuentra ninguna — hasta 25MB',
+    baseUrlPlaceholder:'URL raíz del sitio (opcional) — para resolver rutas relativas',
+    urlPlaceholder:'Uno o más enlaces (uno por línea)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Escanear todo el sitio (revisa también enlaces internos)', cssLabel:'🎨 Buscar imágenes también en archivos CSS',
+    scanBtn:'Escanear', clearBtn:'Borrar', refsLabel:'Enlaces de referencia', galleryLabel:'Imágenes extraídas',
+    selectAllBtn:'Seleccionar todo', dlSelected:'⬇ ZIP seleccionado', dlAll:'⬇ Descargar todo en ZIP', closeBtn:'✕ Cerrar', ready:'Listo' },
+  fr: { tabFile:'📁 Fichier', tabUrl:'🔗 Lien', tabPdf:'📄 PDF',
+    dropTitle:'Choisissez un fichier ou glissez-le ici', dropSub:'.html · .php · .htm · .txt — jusqu\u2019à 20 Mo',
+    pdfDropTitle:'Choisissez un PDF ou glissez-le ici', pdfDropSub:'Extrait les images intégrées, ou affiche la page entière si aucune n\u2019est trouvée — jusqu\u2019à 25 Mo',
+    baseUrlPlaceholder:'URL racine du site (optionnel) — pour résoudre les chemins relatifs',
+    urlPlaceholder:'Un ou plusieurs liens (un par ligne)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Scanner tout le site (vérifie aussi les liens internes)', cssLabel:'🎨 Chercher aussi les images dans les fichiers CSS',
+    scanBtn:'Scanner', clearBtn:'Effacer', refsLabel:'Liens de référence', galleryLabel:'Images extraites',
+    selectAllBtn:'Tout sélectionner', dlSelected:'⬇ ZIP sélectionné', dlAll:'⬇ Télécharger tout en ZIP', closeBtn:'✕ Fermer', ready:'Prêt' },
+  pt: { tabFile:'📁 Arquivo', tabUrl:'🔗 Link', tabPdf:'📄 PDF',
+    dropTitle:'Escolha um arquivo ou arraste aqui', dropSub:'.html · .php · .htm · .txt — até 20MB',
+    pdfDropTitle:'Escolha um PDF ou arraste aqui', pdfDropSub:'Extrai imagens incorporadas, ou renderiza a página se nenhuma for encontrada — até 25MB',
+    baseUrlPlaceholder:'URL raiz do site (opcional) — para resolver caminhos relativos',
+    urlPlaceholder:'Um ou mais links (um por linha)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Escanear o site inteiro (verifica links internos também)', cssLabel:'🎨 Buscar imagens também em arquivos CSS',
+    scanBtn:'Escanear', clearBtn:'Limpar', refsLabel:'Links de referência', galleryLabel:'Imagens extraídas',
+    selectAllBtn:'Selecionar tudo', dlSelected:'⬇ ZIP selecionado', dlAll:'⬇ Baixar tudo em ZIP', closeBtn:'✕ Fechar', ready:'Pronto' },
+  id: { tabFile:'📁 Berkas', tabUrl:'🔗 Tautan', tabPdf:'📄 PDF',
+    dropTitle:'Pilih berkas atau seret ke sini', dropSub:'.html · .php · .htm · .txt — maks 20MB',
+    pdfDropTitle:'Pilih PDF atau seret ke sini', pdfDropSub:'Mengekstrak gambar tertanam, atau merender halaman jika tidak ditemukan — maks 25MB',
+    baseUrlPlaceholder:'URL utama situs (opsional) — untuk resolusi path relatif',
+    urlPlaceholder:'Satu atau lebih tautan (satu per baris)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Pindai seluruh situs (juga cek tautan internal)', cssLabel:'🎨 Cari gambar di berkas CSS juga',
+    scanBtn:'Pindai', clearBtn:'Hapus', refsLabel:'Tautan referensi', galleryLabel:'Gambar yang diekstrak',
+    selectAllBtn:'Pilih semua', dlSelected:'⬇ ZIP terpilih', dlAll:'⬇ Unduh semua sebagai ZIP', closeBtn:'✕ Tutup', ready:'Siap' },
+  zh: { tabFile:'📁 文件', tabUrl:'🔗 链接', tabPdf:'📄 PDF',
+    dropTitle:'选择文件或拖到此处', dropSub:'.html · .php · .htm · .txt — 最大 20MB',
+    pdfDropTitle:'选择 PDF 或拖到此处', pdfDropSub:'提取内嵌图片，若没有则渲染整页 — 最大 25MB',
+    baseUrlPlaceholder:'网站根链接（可选）— 用于解析相对路径',
+    urlPlaceholder:'一个或多个链接（每行一个）\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ 扫描整个网站（也检查内部链接）', cssLabel:'🎨 同时在 CSS 文件中查找图片',
+    scanBtn:'扫描', clearBtn:'清除', refsLabel:'参考链接', galleryLabel:'提取的图片',
+    selectAllBtn:'全选', dlSelected:'⬇ 下载所选 ZIP', dlAll:'⬇ 全部下载为 ZIP', closeBtn:'✕ 关闭', ready:'就绪' },
+  ru: { tabFile:'📁 Файл', tabUrl:'🔗 Ссылка', tabPdf:'📄 PDF',
+    dropTitle:'Выберите файл или перетащите сюда', dropSub:'.html · .php · .htm · .txt — до 20 МБ',
+    pdfDropTitle:'Выберите PDF или перетащите сюда', pdfDropSub:'Извлекает встроенные изображения, иначе рендерит страницу — до 25 МБ',
+    baseUrlPlaceholder:'Корневой URL сайта (опционально) — для относительных путей',
+    urlPlaceholder:'Одна или несколько ссылок (по одной в строке)\nhttps://example.com/page.php',
+    crawlLabel:'🕸️ Сканировать весь сайт (также внутренние ссылки)', cssLabel:'🎨 Искать изображения и в файлах CSS',
+    scanBtn:'Сканировать', clearBtn:'Очистить', refsLabel:'Ссылки-источники', galleryLabel:'Извлечённые изображения',
+    selectAllBtn:'Выбрать все', dlSelected:'⬇ Выбранное в ZIP', dlAll:'⬇ Скачать всё в ZIP', closeBtn:'✕ Закрыть', ready:'Готово' }
+};
+let currentLang = 'en';
+function t(key, params) {
+  let str = (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+  if (params) Object.keys(params).forEach(k => { str = str.split('{' + k + '}').join(params[k]); });
+  return str;
+}
+function applyLanguage(lang) {
+  if (!I18N[lang]) lang = 'en';
+  currentLang = lang;
+  document.documentElement.setAttribute('lang', lang);
+  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder'))); });
+  const sel = document.getElementById('langSelect');
+  if (sel && sel.value !== lang) sel.value = lang;
+}
+function detectLanguage() {
+  const langs = navigator.languages || [navigator.language || 'en'];
+  for (const l of langs) {
+    const code = l.slice(0, 2).toLowerCase();
+    if (I18N[code]) return code;
+  }
+  return 'en';
+}
+applyLanguage(detectLanguage());
+document.getElementById('langSelect').addEventListener('change', (e) => { vibrate(8); applyLanguage(e.target.value); });
+
+/* ---------- Dynamic Island ---------- */
+function islandShow(text, cls) {
+  island.className = 'island show ' + (cls || '');
+  islandText.textContent = text;
+}
+function islandProgress(pct) { islandBar.style.width = Math.min(100, pct) + '%'; }
+function islandHide(delay) {
+  setTimeout(() => { island.classList.remove('show'); islandBar.style.width = '0%'; }, delay || 0);
+}
+
+/* ---------- tabs ---------- */
+const allTabs = [tabFile, tabUrl, tabPdf, tabExif];
+const allPanels = { file: [dropZone, baseRow], url: [urlRow], pdf: [dropZonePdf], exif: [exifModeWrap] };
+const tabIndicator = document.getElementById('tabIndicator');
+function moveIndicator(tab) {
+  if (!tab || !tabIndicator) return;
+  tabIndicator.style.width = tab.offsetWidth + 'px';
+  tabIndicator.style.transform = `translateX(${tab.offsetLeft - 6}px)`;
+}
+function activateTab(tab, mode) {
+  vibrate(8);
+  allTabs.forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  moveIndicator(tab);
+  Object.entries(allPanels).forEach(([key, els]) => {
+    els.forEach(el => {
+      if (!el) return;
+      if (el === urlRow) el.classList.toggle('show', key === mode);
+      else el.style.display = (key === mode) ? 'block' : 'none';
+    });
+  });
+}
+tabFile.addEventListener('click', () => activateTab(tabFile, 'file'));
+tabUrl.addEventListener('click', () => activateTab(tabUrl, 'url'));
+tabPdf.addEventListener('click', () => activateTab(tabPdf, 'pdf'));
+tabExif.addEventListener('click', () => activateTab(tabExif, 'exif'));
+window.addEventListener('load', () => moveIndicator(tabFile));
+window.addEventListener('resize', () => moveIndicator(document.querySelector('.tab.active')));
+
+/* ---------- logging ---------- */
+function log(text, type, tag) {
+  logPanel.style.display = 'block';
+  const line = document.createElement('div');
+  line.className = `log-line ${type || ''}`;
+  const t = new Date().toLocaleTimeString('en-GB');
+  line.innerHTML = `<span class="tag">[${t}] ${tag || 'LOG'}</span> ${escapeHtml(text)}`;
+  logPanel.appendChild(line);
+  logPanel.scrollTop = logPanel.scrollHeight;
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function resetUI() {
+  logPanel.innerHTML = ''; logPanel.style.display = 'none';
+  status.className = 'status'; status.innerText = '';
+  refs.innerHTML = ''; refs.className = ''; refsLabel.style.display = 'none';
+  gallery.innerHTML = ''; galleryLabel.style.display = 'none';
+  toolbar.style.display = 'none'; toolbar.innerHTML = '';
+  exportbar.style.display = 'none'; downloadbar.style.display = 'none';
+  progwrap.classList.remove('show'); progbarFill.style.width = '0%'; progtext.innerText = '';
+  allImages = []; allRefs = []; selected = new Set(); activeFilter = 'all';
+  updateSelCount();
+}
+
+/* ---------- multi-proxy fetch — direct first (fast timeout), then all proxies raced in parallel ---------- */
+const PROXY_BUILDERS = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://thingproxy.freeboard.io/fetch/' + u,
+  u => 'https://corsfix.com/' + u
+];
+function fetchOnce(target, timeout) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  return fetch(target, { signal: controller.signal }).then(r => {
+    clearTimeout(timer);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).finally(() => clearTimeout(timer));
+}
+async function fetchWithFallback(url, opts) {
+  opts = opts || {};
+  const directTimeout = opts.directTimeout || 6000;
+  const proxyTimeout = opts.proxyTimeout || 9000;
+  // try direct first (fast) — most public pages don't need a proxy at all
+  try { return await fetchOnce(url, directTimeout); } catch (e) { /* fall through to proxies */ }
+  // race all proxies in parallel — whichever answers first wins
+  const attempts = PROXY_BUILDERS.map(fn => fetchOnce(fn(url), proxyTimeout).catch(err => Promise.reject(err)));
+  try {
+    return await Promise.any(attempts);
+  } catch (aggErr) {
+    throw new Error('All fetch attempts failed (direct + ' + PROXY_BUILDERS.length + ' proxies)');
+  }
+}
+function withTimeout(promise, ms, fallbackValue) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallbackValue), ms))
+  ]);
+}
+
+/* ---------- drag & drop / clear ---------- */
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; fileInput.dispatchEvent(new Event('change')); }
+});
+clearBtn.addEventListener('click', () => {
+  vibrate(8);
+  fileInput.value = ''; urlInput.value = ''; pdfFile.value = '';
+  filebar.classList.remove('show'); resetUI(); islandHide(0);
+});
+
+/* ---------- file mode ---------- */
+fileInput.addEventListener('change', function () {
+  const file = this.files[0];
+  resetUI();
+  if (!file) return;
+  const baseUrl = baseUrlInput.value.trim() || null;
+
+  if (file.size > MAX_SIZE) {
+    filebar.classList.remove('show');
+    status.className = 'status err show';
+    status.innerText = t('fileTooLarge', { size: (file.size/1024/1024).toFixed(1), max: 20 });
+    return;
+  }
+  fname.textContent = `${file.name} · ${(file.size/1024).toFixed(1)} KB`;
+  filebar.classList.add('show');
+  islandShow(t('readingFile'), 'busy');
+  log(t('fileLoaded', { name: file.name }), 'ok', 'READ');
+  status.innerText = t('parsing'); status.className = 'status show';
+
+  const reader = new FileReader();
+  reader.onerror = () => {
+    log(t('couldNotReadFile'), 'err', 'FAIL');
+    status.className = 'status err show'; status.innerText = t('couldNotReadFileShort');
+    islandShow(t('errorOccurred'), 'err'); islandHide(2500);
+  };
+  reader.onload = async (e) => {
+    pendingScanMeta = { type: 'file', label: file.name };
+    await runPipeline([{ url: baseUrl, text: e.target.result, label: file.name }], baseUrl, false, false);
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- url mode ---------- */
+urlGoBtn.addEventListener('click', async () => {
+  vibrate(10);
+  const raw = urlInput.value.trim();
+  if (!raw) return;
+  let urls = raw.split(/[\n,]/).map(s => s.trim()).filter(Boolean).map(u => /^https?:\/\//i.test(u) ? u : 'https://' + u);
+  if (!urls.length) return;
+  resetUI();
+  filebar.classList.add('show');
+  fname.textContent = urls.length === 1 ? urls[0] : `${urls.length} links (batch scan)`;
+
+  islandShow(t('fetchingSource'), 'busy');
+  status.innerText = t('starting'); status.className = 'status show';
+  progwrap.classList.add('show');
+
+  const sources = [];
+  for (let i = 0; i < urls.length; i++) {
+    const u = urls[i];
+    islandShow(t('fetchingLink', { i: i+1, total: urls.length, url: u.slice(0,30) }), 'busy');
+    log(t('fetchingFrom', { url: u }), 'ok', 'FETCH');
+    try {
+      const text = await fetchWithFallback(u);
+      log(t('fetchSuccess', { url: u }), 'ok', 'FETCH');
+      sources.push({ url: u, text, label: u });
+    } catch (err) {
+      log(t('fetchFailed', { url: u, err: err.message }), 'err', 'FAIL');
+    }
+  }
+
+  if (!sources.length) {
+    status.className = 'status err show';
+    status.innerText = t('noSourceFetched');
+    islandShow(t('errorOccurred'), 'err'); islandHide(2500);
+    progwrap.classList.remove('show');
+    return;
+  }
+
+  pendingScanMeta = { type: 'url', label: urls.length === 1 ? urls[0] : `${urls.length} links`, urls };
+  await runPipeline(sources, sources[0].url, cssToggle.checked, crawlToggle.checked);
+});
+
+/* ---------- pipeline: worker extraction + css + crawl ---------- */
+async function runPipeline(sources, primaryBaseUrl, doCss, doCrawl) {
+  const imagesSet = [];
+  const refsSet = [];
+  const pushImg = (u) => { if (u && !imagesSet.includes(u)) imagesSet.push(u); };
+  const pushRef = (u) => { if (u && !refsSet.includes(u)) refsSet.push(u); };
+
+  let totalJobs = sources.length;
+  let doneJobs = 0;
+  const bump = () => { doneJobs++; const pct = Math.round((doneJobs/totalJobs)*100); progbarFill.style.width = pct+'%'; islandProgress(pct); progtext.innerText = t('jobsDone', { done: doneJobs, total: totalJobs }); };
+
+  const visited = new Set(sources.map(s => s.url).filter(Boolean));
+  const cssJobs = [];
+  const crawlJobs = [];
+
+  log(t('extractingLog'), '', 'SCAN');
+  islandShow(t('extracting'), 'busy');
+
+  for (const src of sources) {
+    const r = await scanText(src.text, src.url, false);
+    r.images.forEach(pushImg);
+    r.refs.forEach(pushRef);
+    if (doCss) r.stylesheets.forEach(href => { if (!visited.has(href)) { visited.add(href); cssJobs.push(href); } });
+    if (doCrawl) r.links.forEach(href => { if (!visited.has(href)) { visited.add(href); crawlJobs.push(href); } });
+    bump();
+  }
+
+  if (doCss && cssJobs.length) {
+    log(t('foundCssFiles', { n: cssJobs.length }), 'warn', 'CSS');
+    totalJobs += cssJobs.length;
+    for (const href of cssJobs) {
+      islandShow(t('scanningCss'), 'busy');
+      try {
+        const cssText = await fetchWithFallback(href, { directTimeout: 5000, proxyTimeout: 7000 });
+        const r = await scanText(cssText, href, true);
+        r.images.forEach(pushImg);
+        log(t('foundImagesInCss', { n: r.images.length, href }), r.images.length ? 'ok' : '', 'CSS');
+      } catch (e) {
+        log(t('couldNotFetchCss', { href }), 'err', 'CSS');
+      }
+      bump();
+    }
+  }
+
+  if (doCrawl && crawlJobs.length) {
+    const limited = crawlJobs.slice(0, 5);
+    log(t('crawlOn', { n: limited.length }), 'warn', 'CRAWL');
+    totalJobs += limited.length;
+    for (const link of limited) {
+      islandShow(t('crawling', { link: link.slice(0,30) }), 'busy');
+      try {
+        const text = await fetchWithFallback(link, { directTimeout: 5000, proxyTimeout: 8000 });
+        const r = await scanText(text, link, false);
+        r.images.forEach(pushImg);
+        r.refs.forEach(pushRef);
+        log(t('crawlSucceeded', { n: r.images.length, link }), r.images.length ? 'ok' : '', 'CRAWL');
+      } catch (e) {
+        log(t('crawlFailed', { link }), 'err', 'CRAWL');
+      }
+      bump();
+    }
+  }
+
+  progwrap.classList.remove('show');
+  finalizeResults(imagesSet, refsSet);
+}
+
+function finalizeResults(imagesSet, refsSet) {
+  // refs render
+  if (refsSet.length) {
+    refsLabel.style.display = 'flex'; refs.classList.add('show');
+    refsSet.forEach(url => {
+      const row = document.createElement('div'); row.className = 'ref-row';
+      const badge = url.includes('.php') ? 'PHP' : 'API';
+      row.innerHTML = `<span class="badge">${badge}</span><span class="ref-text">${escapeHtml(url)}</span><button class="copy-btn">${t('copyLabel')}</button>`;
+      row.querySelector('.copy-btn').addEventListener('click', function () {
+        navigator.clipboard.writeText(url).then(() => { this.textContent = t('copiedLabel'); setTimeout(() => this.textContent = t('copyLabel'), 1500); });
+      });
+      refs.appendChild(row);
+    });
+    allRefs = refsSet;
+  }
+
+  if (!imagesSet.length) {
+    log(t('noImageSources'), 'err', 'DONE');
+    status.className = 'status err show'; status.innerText = t('noImagesFoundShort');
+    islandShow(t('noImagesFoundIsland'), 'err'); islandHide(2500);
+    return;
+  }
+
+  log(t('foundImagesLog', { n: imagesSet.length }), 'ok', 'DONE');
+  status.className = 'status ok show'; status.innerText = t('foundImagesStatus', { n: imagesSet.length });
+  islandShow(t('foundImagesIsland', { n: imagesSet.length }), ''); islandHide(3000);
+  addToHistory(imagesSet.length);
+
+  galleryLabel.style.display = 'flex';
+  exportbar.style.display = 'flex';
+  downloadbar.style.display = 'flex';
+  imagesSet.forEach((src, i) => displayCard(src, i));
+  buildToolbar();
+}
+
+/* ---------- toolbar: format filter chips ---------- */
+function buildToolbar() {
+  const formats = new Set(allImages.map(x => x.format));
+  toolbar.style.display = 'flex';
+  toolbar.innerHTML = '';
+  const allChip = document.createElement('button');
+  allChip.className = 'chip active'; allChip.textContent = t('allChip', { n: allImages.length });
+  allChip.onclick = () => setFilter('all', allChip);
+  toolbar.appendChild(allChip);
+  formats.forEach(fmt => {
+    const count = allImages.filter(x => x.format === fmt).length;
+    const chip = document.createElement('button');
+    chip.className = 'chip'; chip.textContent = `${fmt} (${count})`;
+    chip.onclick = () => setFilter(fmt, chip);
+    toolbar.appendChild(chip);
+  });
+}
+function setFilter(fmt, chipEl) {
+  vibrate(6);
+  activeFilter = fmt;
+  toolbar.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chipEl.classList.add('active');
+  document.querySelectorAll('.card').forEach(card => {
+    const cardFmt = card.getAttribute('data-format');
+    card.classList.toggle('hidden-filter', fmt !== 'all' && cardFmt !== fmt);
+  });
+}
+
+/* ---------- selection ---------- */
+function updateSelCount() {
+  selCountEl.textContent = selected.size;
+  downloadSelectedBtn.disabled = selected.size === 0;
+}
+selAllBtn.addEventListener('click', () => {
+  vibrate(8);
+  const visibleCards = [...document.querySelectorAll('.card:not(.hidden-filter)')];
+  const allSelected = visibleCards.every(c => selected.has(c.dataset.idx));
+  visibleCards.forEach(c => {
+    const cb = c.querySelector('.cb');
+    if (allSelected) { selected.delete(c.dataset.idx); cb.classList.remove('checked'); }
+    else { selected.add(c.dataset.idx); cb.classList.add('checked'); }
+  });
+  updateSelCount();
+});
+
+/* ---------- export ---------- */
+function triggerDownload(url, filename) {
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ============================= FORMAT CONVERSION + COMPRESSION ============================= */
+const COMPRESS_PRESETS = {
+  original: { maxDim: null, quality: null },
+  medium: { maxDim: 1600, quality: 0.8 },
+  small: { maxDim: 800, quality: 0.6 }
+};
+async function saveWithOptions(srcData, baseFilename, format, compression) {
+  let blob;
+  try {
+    blob = await fetch(srcData).then(r => r.blob());
+  } catch (e) {
+    // couldn't fetch bytes (likely cross-origin without CORS) — best effort fallback
+    window.open(srcData, '_blank');
+    return;
+  }
+  const noConversionNeeded = format === 'original' && compression === 'original';
+  if (noConversionNeeded) {
+    triggerDownload(URL.createObjectURL(blob), baseFilename);
+    return;
+  }
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const preset = COMPRESS_PRESETS[compression] || COMPRESS_PRESETS.original;
+    let w = bitmap.width, h = bitmap.height;
+    if (preset.maxDim && Math.max(w, h) > preset.maxDim) {
+      const scale = preset.maxDim / Math.max(w, h);
+      w = Math.round(w * scale); h = Math.round(h * scale);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' };
+    const mime = format === 'original' ? (blob.type || 'image/png') : mimeMap[format];
+    const q = (mime === 'image/png') ? undefined : (preset.quality || 0.92);
+    const outBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), mime, q);
+    });
+    const outExt = format === 'original' ? (baseFilename.split('.').pop() || 'png') : format;
+    const finalName = baseFilename.replace(/\.[^.]+$/, '') + '.' + outExt;
+    triggerDownload(URL.createObjectURL(outBlob), finalName);
+  } catch (convErr) {
+    // conversion unsupported for this image — save the original bytes instead
+    triggerDownload(URL.createObjectURL(blob), baseFilename);
+    log(t('conversionNotAvailable'), 'warn', 'SAVE');
+  }
+}
+
+/* ============================= EXIF METADATA READER ============================= */
+const EXIF_TAGS = {
+  0x010F: 'Make', 0x0110: 'Model', 0x0112: 'Orientation', 0x0132: 'DateTime',
+  0x829A: 'ExposureTime', 0x829D: 'FNumber', 0x8827: 'ISO', 0x920A: 'FocalLength',
+  0x0131: 'Software', 0x8825: 'GPSInfo'
+};
+const GPS_TAGS = { 0x0001: 'GPSLatRef', 0x0002: 'GPSLat', 0x0003: 'GPSLonRef', 0x0004: 'GPSLon' };
+
+function exifReadValue(view, type, count, valueOffset, tiffStart, little) {
+  const typeSizes = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+  const size = (typeSizes[type] || 1) * count;
+  let offset = valueOffset;
+  if (size > 4) offset = tiffStart + view.getUint32(valueOffset, little);
+  try {
+    if (type === 2) {
+      let str = '';
+      for (let i = 0; i < count - 1; i++) str += String.fromCharCode(view.getUint8(offset + i));
+      return str.trim();
+    }
+    if (type === 3) return view.getUint16(offset, little);
+    if (type === 4) return view.getUint32(offset, little);
+    if (type === 5) {
+      if (count > 1) {
+        const vals = [];
+        for (let i = 0; i < count; i++) {
+          const num = view.getUint32(offset + i * 8, little);
+          const den = view.getUint32(offset + i * 8 + 4, little);
+          vals.push(den ? num / den : 0);
+        }
+        return vals;
+      }
+      const num = view.getUint32(offset, little);
+      const den = view.getUint32(offset + 4, little);
+      return den ? num / den : 0;
+    }
+  } catch (e) { return null; }
+  return null;
+}
+function exifReadIFD(view, tiffStart, ifdOffset, little, tagMap) {
+  const result = {};
+  const numEntries = view.getUint16(ifdOffset, little);
+  for (let i = 0; i < numEntries; i++) {
+    const entryOffset = ifdOffset + 2 + i * 12;
+    const tag = view.getUint16(entryOffset, little);
+    const type = view.getUint16(entryOffset + 2, little);
+    const count = view.getUint32(entryOffset + 4, little);
+    if (tagMap[tag]) {
+      result[tagMap[tag]] = { value: exifReadValue(view, type, count, entryOffset + 8, tiffStart, little), raw: entryOffset };
+    }
+  }
+  return result;
+}
+function dmsToDecimal(dms, ref) {
+  if (!Array.isArray(dms) || dms.length < 3) return null;
+  let dec = dms[0] + dms[1] / 60 + dms[2] / 3600;
+  if (ref === 'S' || ref === 'W') dec = -dec;
+  return dec;
+}
+function diagnoseJpegRaw(view) {
+  const diag = { container: 'jpeg', foundApp1: false, foundExifSignature: false, byteOrder: null, ifd0TagCount: null, ifd0Tags: [], hasGpsInfoTag: false, gpsIfdTagCount: null, gpsTags: [], gpsRawValues: null, decodedLat: null, decodedLon: null, treatedAsNullIsland: null, exifSubIfdTags: null, ifd1Tags: null, error: null };
+  try {
+    let offset = 2;
+    const length = view.byteLength;
+    while (offset < length - 4) {
+      const marker = view.getUint16(offset);
+      if (marker === 0xFFE1) {
+        diag.foundApp1 = true;
+        const app1Length = view.getUint16(offset + 2);
+        const exifStart = offset + 4;
+        if (view.getUint32(exifStart) === 0x45786966) {
+          diag.foundExifSignature = true;
+          const tiffStart = exifStart + 6;
+          const little = view.getUint16(tiffStart) === 0x4949;
+          diag.byteOrder = little ? 'II (little-endian)' : 'MM (big-endian)';
+          const firstIFD = view.getUint32(tiffStart + 4, little);
+          const ifdOffset = tiffStart + firstIFD;
+          const numEntries = view.getUint16(ifdOffset, little);
+          diag.ifd0TagCount = numEntries;
+          const readTags = (ifdOff) => {
+            const n = view.getUint16(ifdOff, little);
+            const tags = [];
+            for (let i = 0; i < n; i++) {
+              const entryOffset = ifdOff + 2 + i * 12;
+              tags.push({ tag: view.getUint16(entryOffset, little), entryOffset });
+            }
+            return tags;
+          };
+          const ifd0Entries = readTags(ifdOffset);
+          ifd0Entries.forEach(({ tag, entryOffset }) => {
+            diag.ifd0Tags.push('0x' + tag.toString(16).toUpperCase().padStart(4, '0'));
+            if (tag === 0x8825) {
+              diag.hasGpsInfoTag = true;
+              const type = view.getUint16(entryOffset + 2, little);
+              const count = view.getUint32(entryOffset + 4, little);
+              const gpsIfdRel = exifReadValue(view, type, count, entryOffset + 8, tiffStart, little);
+              if (typeof gpsIfdRel === 'number') {
+                const gpsOffset = tiffStart + gpsIfdRel;
+                const gpsEntries = readTags(gpsOffset);
+                diag.gpsIfdTagCount = gpsEntries.length;
+                gpsEntries.forEach(g => diag.gpsTags.push('0x' + g.tag.toString(16).toUpperCase().padStart(4, '0')));
+                // decode the actual values using the same tag map + reader the real parser uses
+                const gpsIFD = exifReadIFD(view, tiffStart, gpsOffset, little, GPS_TAGS);
+                diag.gpsRawValues = {};
+                Object.keys(gpsIFD).forEach(k => { diag.gpsRawValues[k] = gpsIFD[k].value; });
+                const lat = gpsIFD.GPSLat ? dmsToDecimal(gpsIFD.GPSLat.value, gpsIFD.GPSLatRef ? gpsIFD.GPSLatRef.value : 'N') : null;
+                const lon = gpsIFD.GPSLon ? dmsToDecimal(gpsIFD.GPSLon.value, gpsIFD.GPSLonRef ? gpsIFD.GPSLonRef.value : 'E') : null;
+                diag.decodedLat = lat; diag.decodedLon = lon;
+                diag.treatedAsNullIsland = (lat !== null && lon !== null && Math.abs(lat) < 0.0001 && Math.abs(lon) < 0.0001);
+              }
+            }
+            if (tag === 0x8769) { // ExifIFDPointer — check in case GPS was non-standardly nested here
+              const type = view.getUint16(entryOffset + 2, little);
+              const count = view.getUint32(entryOffset + 4, little);
+              const subRel = exifReadValue(view, type, count, entryOffset + 8, tiffStart, little);
+              if (typeof subRel === 'number') {
+                const subEntries = readTags(tiffStart + subRel);
+                diag.exifSubIfdTags = subEntries.map(e => '0x' + e.tag.toString(16).toUpperCase().padStart(4, '0'));
+                if (diag.exifSubIfdTags.includes('0x8825')) diag.hasGpsInfoTag = 'found in ExifSubIFD (non-standard)';
+              }
+            }
+          });
+          // IFD1 (thumbnail) — chained via the 4-byte "next IFD offset" right after IFD0's entries
+          const nextIfdOffsetPos = ifdOffset + 2 + numEntries * 12;
+          const ifd1Rel = view.getUint32(nextIfdOffsetPos, little);
+          if (ifd1Rel) {
+            const ifd1Entries = readTags(tiffStart + ifd1Rel);
+            diag.ifd1Tags = ifd1Entries.map(e => '0x' + e.tag.toString(16).toUpperCase().padStart(4, '0'));
+            if (diag.ifd1Tags.includes('0x8825')) diag.hasGpsInfoTag = 'found in IFD1/thumbnail IFD (non-standard)';
+          }
+          break;
+        }
+        offset += 2 + app1Length;
+      } else if (marker === 0xFFDA) {
+        break;
+      } else if ((marker & 0xFF00) === 0xFF00) {
+        offset += 2 + view.getUint16(offset + 2);
+      } else break;
+    }
+  } catch (e) { diag.error = e.message; }
+  return diag;
+}
+function diagnoseImageMetadata(buffer) {
+  const view = new DataView(buffer);
+  const kind = detectImageContainer(view);
+  if (kind === 'jpeg') return diagnoseJpegRaw(view);
+  return { container: kind };
+}
+function readIfd0AndGps(view, tiffStart, little) {
+  const firstIFD = view.getUint32(tiffStart + 4, little);
+  const ifd0 = exifReadIFD(view, tiffStart, tiffStart + firstIFD, little, EXIF_TAGS);
+  const out = {};
+  Object.keys(ifd0).forEach(k => { if (k !== 'GPSInfo') out[k] = ifd0[k].value; });
+  if (ifd0.GPSInfo) {
+    const gpsIFD = exifReadIFD(view, tiffStart, tiffStart + ifd0.GPSInfo.value, little, GPS_TAGS);
+    const lat = gpsIFD.GPSLat ? dmsToDecimal(gpsIFD.GPSLat.value, gpsIFD.GPSLatRef ? gpsIFD.GPSLatRef.value : 'N') : null;
+    const lon = gpsIFD.GPSLon ? dmsToDecimal(gpsIFD.GPSLon.value, gpsIFD.GPSLonRef ? gpsIFD.GPSLonRef.value : 'E') : null;
+    const isNullIsland = lat !== null && lon !== null && Math.abs(lat) < 0.0001 && Math.abs(lon) < 0.0001;
+    if (lat !== null && lon !== null && !isNullIsland) { out.GPS = `${lat.toFixed(6)}, ${lon.toFixed(6)}`; out._lat = lat; out._lon = lon; }
+  }
+  return Object.keys(out).length ? out : null;
+}
+function parseExifFromJpeg(view) {
+  let offset = 2;
+  const length = view.byteLength;
+  while (offset < length - 4) {
+    const marker = view.getUint16(offset);
+    if (marker === 0xFFE1) {
+      const app1Length = view.getUint16(offset + 2);
+      const exifStart = offset + 4;
+      if (view.getUint32(exifStart) === 0x45786966) { // "Exif"
+        const tiffStart = exifStart + 6;
+        const little = view.getUint16(tiffStart) === 0x4949;
+        return readIfd0AndGps(view, tiffStart, little);
+      }
+      offset += 2 + app1Length;
+    } else if (marker === 0xFFDA) {
+      break; // start of scan (compressed image data) — no more markers to check
+    } else if ((marker & 0xFF00) === 0xFF00) {
+      offset += 2 + view.getUint16(offset + 2);
+    } else break;
+  }
+  return null;
+}
+function parseExifFromPng(view) {
+  let offset = 8; // past the 8-byte PNG signature
+  const length = view.byteLength;
+  while (offset + 8 <= length) {
+    const chunkLen = view.getUint32(offset);
+    const type = String.fromCharCode(view.getUint8(offset+4), view.getUint8(offset+5), view.getUint8(offset+6), view.getUint8(offset+7));
+    const dataStart = offset + 8;
+    if (type === 'eXIf') {
+      const little = view.getUint16(dataStart) === 0x4949;
+      return readIfd0AndGps(view, dataStart, little);
+    }
+    if (type === 'IEND') break;
+    offset = dataStart + chunkLen + 4; // skip data + 4-byte CRC
+  }
+  return null;
+}
+function detectImageContainer(view) {
+  if (view.byteLength >= 2 && view.getUint16(0) === 0xFFD8) return 'jpeg';
+  if (view.byteLength >= 8 && view.getUint32(0) === 0x89504E47) return 'png';
+  if (view.byteLength >= 12 && view.getUint32(4) === 0x66747970) { // 'ftyp' box at offset 4 — ISO-BMFF (HEIC/HEIF/AVIF/MP4-family)
+    const brand = String.fromCharCode(view.getUint8(8), view.getUint8(9), view.getUint8(10), view.getUint8(11));
+    if (/^(heic|heix|hevc|heim|heis|hevm|hevs|mif1|msf1)$/i.test(brand)) return 'heic';
+    return 'isobmff';
+  }
+  return 'unknown';
+}
+function parseExifFromArrayBuffer(buffer) {
+  try {
+    const view = new DataView(buffer);
+    const kind = detectImageContainer(view);
+    if (kind === 'jpeg') return parseExifFromJpeg(view);
+    if (kind === 'png') return parseExifFromPng(view);
+    if (kind === 'heic') return { _unsupported: 'heic' };
+    return null;
+  } catch (e) { return null; }
+}
+exportJsonBtn.addEventListener('click', () => {
+  vibrate(8);
+  const data = { images: allImages, references: allRefs, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  triggerDownload(URL.createObjectURL(blob), 'mh-rafi-extract-result.json');
+});
+exportCsvBtn.addEventListener('click', () => {
+  vibrate(8);
+  let csv = 'index,format,kind,width,height,url\n';
+  allImages.forEach((img, i) => {
+    const url = img.isDataUri ? '[base64 data]' : img.url;
+    csv += `${i+1},${img.format},${img.kind},${img.width||''},${img.height||''},"${(url||'').replace(/"/g,'""')}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  triggerDownload(URL.createObjectURL(blob), 'mh-rafi-extract-result.csv');
+});
+
+/* ---------- GPS map view (built on top of the EXIF/GPS reader above) ---------- */
+const gpsMapBtn = document.getElementById('gpsMapBtn');
+const mapModal = document.getElementById('mapModal');
+const mapModalClose = document.getElementById('mapModalClose');
+const mapModalTitle = document.getElementById('mapModalTitle');
+let leafletMap = null;
+const geocodeCache = new Map();
+async function reverseGeocode(lat, lon) {
+  const key = lat.toFixed(4) + ',' + lon.toFixed(4);
+  if (geocodeCache.has(key)) return geocodeCache.get(key);
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`);
+    const data = await res.json();
+    const addr = data.address || {};
+    const parts = [addr.city || addr.town || addr.village || addr.suburb || addr.county, addr.state, addr.country].filter(Boolean);
+    const label = parts.length ? parts.join(', ') : (data.display_name || null);
+    geocodeCache.set(key, label);
+    return label;
+  } catch (e) { geocodeCache.set(key, null); return null; }
+}
+async function openGpsMap() {
+  vibrate(10);
+  mapModal.classList.add('show');
+  const mapContainer = document.getElementById('mapContainer');
+  mapContainer.innerHTML = '';
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+
+  const imageEntries = allImages.map((m, i) => ({ url: m.url, mediaKind: m.mediaKind, idx: i })).filter(m => m.mediaKind === 'image');
+  if (!imageEntries.length) {
+    mapModalTitle.textContent = t('mapNoneFound');
+    mapContainer.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--ink-dim); font-family:var(--sans); font-size:0.85rem; text-align:center; padding:20px;">${t('mapNoneFoundDesc')}</div>`;
+    return;
+  }
+
+  const geotagged = [];
+  for (let i = 0; i < imageEntries.length; i++) {
+    if (!mapModal.classList.contains('show')) return; // closed mid-scan
+    mapModalTitle.textContent = t('mapScanningProgress', { done: i + 1, total: imageEntries.length });
+    try {
+      const buf = await fetch(imageEntries[i].url).then(r => r.arrayBuffer());
+      const exif = parseExifFromArrayBuffer(buf);
+      if (exif && typeof exif._lat === 'number' && typeof exif._lon === 'number') {
+        geotagged.push({ lat: exif._lat, lon: exif._lon, url: imageEntries[i].url, idx: imageEntries[i].idx });
+      }
+    } catch (e) { /* unreadable — skip */ }
+  }
+
+  if (!geotagged.length) {
+    mapModalTitle.textContent = t('mapNoneFound');
+    mapContainer.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--ink-dim); font-family:var(--sans); font-size:0.85rem; text-align:center; padding:20px;">${t('mapNoneFoundDesc')}</div>`;
+    return;
+  }
+
+  mapModalTitle.textContent = t('mapFound', { n: geotagged.length });
+  leafletMap = L.map(mapContainer, { zoomControl: true }).setView([geotagged[0].lat, geotagged[0].lon], 12);
+  leafletMap.on('click', (e) => { window.open(`https://www.google.com/maps?q=${e.latlng.lat},${e.latlng.lng}`, '_blank', 'noopener'); });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(leafletMap);
+
+  const pinIcon = L.divIcon({ className: 'gps-pin-icon', iconSize: [14, 14], iconAnchor: [7, 14] });
+  const bounds = [];
+  geotagged.forEach(g => {
+    bounds.push([g.lat, g.lon]);
+    const marker = L.marker([g.lat, g.lon], { icon: pinIcon }).addTo(leafletMap);
+    marker.bindPopup(`<img src="${g.url}" loading="lazy"><div>${g.lat.toFixed(5)}, ${g.lon.toFixed(5)}</div><div class="geo-label" id="geo-${g.idx}" style="color:var(--ink-dim); font-size:0.68rem; margin-top:2px;">📍 …</div><div style="display:flex; gap:6px; margin-top:6px;"><button class="view-photo-btn" data-idx="${g.idx}" style="padding:6px 10px;border-radius:8px;border:none;background:var(--mint);color:#04150e;font-weight:700;cursor:pointer;font-size:0.72rem;">${t('mapViewPhoto')}</button><a href="https://www.google.com/maps?q=${g.lat},${g.lon}" target="_blank" rel="noopener" style="padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.15);color:#fff;font-weight:700;font-size:0.72rem;text-decoration:none;">${t('openInGoogleMaps')}</a></div>`);
+    marker.on('popupopen', () => {
+      reverseGeocode(g.lat, g.lon).then(label => {
+        const el = mapContainer.querySelector(`#geo-${g.idx}`);
+        if (el) el.textContent = label ? `📍 ${label}` : t('geoUnavailable');
+      });
+      const btn = mapContainer.querySelector(`.view-photo-btn[data-idx="${g.idx}"]`);
+      if (btn) btn.onclick = () => {
+        mapModal.classList.remove('show');
+        const card = document.querySelector(`.card[data-idx="${g.idx}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.outline = '2px solid var(--mint)';
+          setTimeout(() => { card.style.outline = ''; }, 1500);
+        }
+      };
+    });
+  });
+  if (bounds.length > 1) leafletMap.fitBounds(bounds, { padding: [40, 40] });
+}
+/* ---------- perceptual hash duplicate/similar image detection ---------- */
+async function computeAHash(url) {
+  const blob = await fetch(url).then(r => r.blob());
+  const objUrl = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error('image load failed'));
+      im.src = objUrl;
+    });
+    const size = 8;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+    const gray = [];
+    for (let i = 0; i < data.length; i += 4) gray.push(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    const avg = gray.reduce((a, b) => a + b, 0) / gray.length;
+    let hash = '';
+    for (const g of gray) hash += g >= avg ? '1' : '0';
+    return hash;
+  } finally {
+    URL.revokeObjectURL(objUrl);
+  }
+}
+function hammingDistance(a, b) {
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+  return d;
+}
+const dupBtn = document.getElementById('dupBtn');
+const dupModal = document.getElementById('dupModal');
+const dupModalClose = document.getElementById('dupModalClose');
+const dupModalTitle = document.getElementById('dupModalTitle');
+const dupContainer = document.getElementById('dupContainer');
+async function openDupScan() {
+  vibrate(10);
+  dupModal.classList.add('show');
+  dupContainer.innerHTML = '';
+  const imageEntries = allImages.map((m, i) => ({ url: m.url, mediaKind: m.mediaKind, idx: i })).filter(m => m.mediaKind === 'image');
+  if (imageEntries.length < 2) {
+    dupModalTitle.textContent = t('dupNotEnough');
+    return;
+  }
+  const hashes = [];
+  for (let i = 0; i < imageEntries.length; i++) {
+    if (!dupModal.classList.contains('show')) return;
+    dupModalTitle.textContent = t('dupScanningProgress', { done: i + 1, total: imageEntries.length });
+    try {
+      const hash = await computeAHash(imageEntries[i].url);
+      hashes.push({ hash, idx: imageEntries[i].idx, url: imageEntries[i].url });
+    } catch (e) { /* unreadable — skip */ }
+  }
+  const groups = [];
+  const used = new Set();
+  for (let i = 0; i < hashes.length; i++) {
+    if (used.has(i)) continue;
+    const group = [hashes[i]];
+    used.add(i);
+    for (let j = i + 1; j < hashes.length; j++) {
+      if (used.has(j)) continue;
+      if (hammingDistance(hashes[i].hash, hashes[j].hash) <= 8) { group.push(hashes[j]); used.add(j); }
+    }
+    if (group.length > 1) groups.push(group);
+  }
+  if (!groups.length) {
+    dupModalTitle.textContent = t('dupNoneFound');
+    dupContainer.innerHTML = `<div style="text-align:center; color:var(--ink-dim); font-family:var(--sans); font-size:0.85rem; padding:30px 20px;">${t('dupNoneFoundDesc')}</div>`;
+    return;
+  }
+  dupModalTitle.textContent = t('dupFound', { n: groups.length });
+  dupContainer.innerHTML = '';
+  groups.forEach((group, gi) => {
+    const groupEl = document.createElement('div');
+    groupEl.style.cssText = 'margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--stroke-soft);';
+    groupEl.innerHTML = `<div style="font-family:var(--sans); font-size:0.78rem; color:var(--ink-dim); margin-bottom:8px;">${t('dupGroupLabel', { n: gi + 1, count: group.length })}</div>`;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;';
+    group.forEach(item => {
+      const thumb = document.createElement('img');
+      thumb.src = item.url; thumb.loading = 'lazy';
+      thumb.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:10px; flex-shrink:0; cursor:pointer;';
+      thumb.onclick = () => {
+        dupModal.classList.remove('show');
+        const card = document.querySelector(`.card[data-idx="${item.idx}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.outline = '2px solid var(--mint)';
+          setTimeout(() => { card.style.outline = ''; }, 1500);
+        }
+      };
+      row.appendChild(thumb);
+    });
+    groupEl.appendChild(row);
+    dupContainer.appendChild(groupEl);
+  });
+  const selBtn = document.createElement('button');
+  selBtn.className = 'btn'; selBtn.style.marginTop = '4px';
+  selBtn.textContent = t('dupSelectExtras');
+  selBtn.onclick = () => {
+    vibrate(8);
+    groups.forEach(group => {
+      group.slice(1).forEach(item => {
+        const idxStr = String(item.idx);
+        selected.add(idxStr);
+        const cb = document.querySelector(`.card[data-idx="${idxStr}"] .cb`);
+        if (cb) cb.classList.add('checked');
+      });
+    });
+    updateSelCount();
+    dupModal.classList.remove('show');
+  };
+  dupContainer.appendChild(selBtn);
+}
+dupBtn.addEventListener('click', openDupScan);
+dupModalClose.addEventListener('click', () => dupModal.classList.remove('show'));
+dupModal.addEventListener('click', (e) => { if (e.target === dupModal) dupModal.classList.remove('show'); });
+
+gpsMapBtn.addEventListener('click', openGpsMap);
+mapModalClose.addEventListener('click', () => mapModal.classList.remove('show'));
+mapModal.addEventListener('click', (e) => { if (e.target === mapModal) mapModal.classList.remove('show'); });
+
+/* swipe-down-to-dismiss (iOS sheet gesture) */
+function enableSwipeToDismiss(innerEl, modalEl) {
+  let startY = 0, currentY = 0, dragging = false;
+  innerEl.addEventListener('touchstart', (e) => {
+    if (innerEl.scrollTop > 0) return;
+    startY = e.touches[0].clientY; dragging = true; innerEl.style.transition = 'none';
+  }, { passive: true });
+  innerEl.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY - startY;
+    if (currentY > 0) innerEl.style.transform = `translateY(${currentY}px)`;
+  }, { passive: true });
+  innerEl.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false; innerEl.style.transition = '';
+    if (currentY > 110) { modalEl.classList.remove('show'); }
+    innerEl.style.transform = '';
+    currentY = 0;
+  });
+}
+enableSwipeToDismiss(document.getElementById('mapModalInner'), mapModal);
+enableSwipeToDismiss(document.getElementById('dupModalInner'), document.getElementById('dupModal'));
+
+/* ---------- gallery card ---------- */
+function displayCard(srcData, index) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.idx = String(index);
+  card.style.animationDelay = `${Math.min(index * 0.05, 0.6)}s`;
+
+  const VIDEO_EXT = ['mp4', 'm4v', 'webm', 'ogv', 'mov', 'avi', 'mkv', '3gp', '3g2', 'flv', 'wmv', 'mpg', 'mpeg', 'ts', 'mts', 'm2ts', 'vob', 'm3u8'];
+  const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'aac', 'flac', 'wma', 'opus', 'weba', 'ogg', 'oga', 'mid', 'midi', 'amr', 'aiff', 'aif', 'ac3', 'm3u'];
+
+  const isDataUri = srcData.startsWith('data:');
+  const mimeMatch = srcData.match(/^data:(image|video|audio)\/([a-zA-Z0-9.+-]+)/i);
+  const extMatch = srcData.match(/\.([a-zA-Z0-9]+)(\?|#|$)/i);
+  let mediaKind = 'image', fmt;
+  if (mimeMatch) {
+    mediaKind = mimeMatch[1].toLowerCase();
+    fmt = mimeMatch[2].split('+')[0].toUpperCase();
+  } else if (extMatch) {
+    const ext = extMatch[1].toLowerCase();
+    mediaKind = VIDEO_EXT.includes(ext) ? 'video' : AUDIO_EXT.includes(ext) ? 'audio' : 'image';
+    fmt = extMatch[1].toUpperCase();
+  } else {
+    fmt = isDataUri ? 'IMG' : 'URL';
+  }
+  const kindLabel = isDataUri ? 'base64' : (/^https?:\/\//i.test(srcData) ? 'external url' : 'relative path');
+  const mediaIcon = { image: '🖼️', video: '🎬', audio: '🎵' }[mediaKind];
+  card.setAttribute('data-format', fmt);
+
+  const meta = { url: srcData, format: fmt, kind: kindLabel, mediaKind, isDataUri, width: null, height: null };
+  allImages.push(meta);
+
+  const head = document.createElement('div');
+  head.className = 'card-head';
+  const cb = document.createElement('div');
+  cb.className = 'cb';
+  cb.onclick = () => {
+    vibrate(6);
+    if (selected.has(card.dataset.idx)) { selected.delete(card.dataset.idx); cb.classList.remove('checked'); }
+    else { selected.add(card.dataset.idx); cb.classList.add('checked'); }
+    updateSelCount();
+  };
+  const leftWrap = document.createElement('div'); leftWrap.className = 'left';
+  leftWrap.appendChild(cb);
+  const idxSpan = document.createElement('span');
+  idxSpan.innerHTML = `<span class="idx">#${index + 1} · ${mediaIcon} ${fmt}</span>`;
+  leftWrap.appendChild(idxSpan);
+  head.appendChild(leftWrap);
+  const dimSpan = document.createElement('span'); dimSpan.className = 'dim'; dimSpan.id = `dim-${index}`; dimSpan.textContent = kindLabel;
+  head.appendChild(dimSpan);
+  card.appendChild(head);
+
+  const wrap = document.createElement('div'); wrap.className = 'imgwrap';
+  let loaded = true;
+  let mediaEl;
+
+  if (mediaKind === 'video') {
+    wrap.classList.add('loading');
+    mediaEl = document.createElement('video');
+    mediaEl.controls = true; mediaEl.playsInline = true; mediaEl.preload = 'none';
+    mediaEl.style.width = '100%'; mediaEl.style.maxHeight = '70vh';
+    mediaEl.addEventListener('loadedmetadata', () => {
+      meta.width = mediaEl.videoWidth; meta.height = mediaEl.videoHeight;
+      const dimEl = document.getElementById(`dim-${index}`);
+      if (dimEl && mediaEl.videoWidth) dimEl.textContent = `${mediaEl.videoWidth}×${mediaEl.videoHeight}`;
+      wrap.classList.remove('loading');
+    });
+    mediaEl.addEventListener('error', () => {
+      loaded = false;
+      wrap.classList.remove('loading');
+      wrap.innerHTML = `<div class="broken">Could not load this video — the link may be broken or the file no longer active.<span class="path">${escapeHtml(srcData.substring(0, 90))}${srcData.length > 90 ? '…' : ''}</span></div>`;
+      downloadBtn.disabled = true; downloadBtn.textContent = 'Failed to load';
+    });
+    wrap.appendChild(mediaEl);
+    registerLazy(wrap, () => { mediaEl.preload = 'metadata'; mediaEl.src = srcData; });
+  } else if (mediaKind === 'audio') {
+    wrap.classList.add('loading');
+    const audioWrap = document.createElement('div');
+    audioWrap.style.cssText = 'width:100%; padding:30px 16px; text-align:center;';
+    audioWrap.innerHTML = `<div style="font-size:2.2rem; margin-bottom:12px;">🎵</div>`;
+    mediaEl = document.createElement('audio');
+    mediaEl.controls = true; mediaEl.preload = 'none';
+    mediaEl.style.width = '100%';
+    mediaEl.addEventListener('loadedmetadata', () => wrap.classList.remove('loading'));
+    mediaEl.addEventListener('error', () => {
+      loaded = false;
+      wrap.classList.remove('loading');
+      audioWrap.innerHTML = `<div class="broken">Could not load this audio — the link may be broken or the file no longer active.<span class="path">${escapeHtml(srcData.substring(0, 90))}${srcData.length > 90 ? '…' : ''}</span></div>`;
+      downloadBtn.disabled = true; downloadBtn.textContent = 'Failed to load';
+    });
+    audioWrap.appendChild(mediaEl);
+    wrap.appendChild(audioWrap);
+    registerLazy(wrap, () => { mediaEl.preload = 'metadata'; mediaEl.src = srcData; });
+  } else {
+    wrap.classList.add('loading');
+    mediaEl = document.createElement('img');
+    mediaEl.onload = function () {
+      meta.width = mediaEl.naturalWidth; meta.height = mediaEl.naturalHeight;
+      const dimEl = document.getElementById(`dim-${index}`);
+      if (dimEl && mediaEl.naturalWidth) dimEl.textContent = `${mediaEl.naturalWidth}×${mediaEl.naturalHeight}`;
+      wrap.classList.remove('loading');
+    };
+    mediaEl.onerror = function () {
+      loaded = false;
+      wrap.classList.remove('loading');
+      wrap.innerHTML = `<div class="broken">Could not render an image from this source — it may be a relative path that only works on the original site, or the link is no longer active.<span class="path">${escapeHtml(srcData.substring(0, 90))}${srcData.length > 90 ? '…' : ''}</span></div>`;
+      downloadBtn.disabled = true; downloadBtn.textContent = 'Image failed to load';
+    };
+    mediaEl.addEventListener('click', () => { if (!loaded) return; vibrate(8); lightboxImg.src = srcData; lightbox.classList.add('show'); });
+    wrap.appendChild(mediaEl);
+    registerLazy(wrap, () => { mediaEl.src = srcData; });
+  }
+  card.appendChild(wrap);
+
+  let fmtSelect = { value: 'original' }, compSelect = { value: 'original' };
+  if (mediaKind === 'image') {
+    const optrow = document.createElement('div'); optrow.className = 'optrow';
+    fmtSelect = document.createElement('select');
+    fmtSelect.innerHTML = `<option value="original">Format: Original</option><option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option>`;
+    compSelect = document.createElement('select');
+    compSelect.innerHTML = `<option value="original">Quality: Original</option><option value="medium">Medium (1600px)</option><option value="small">Small (800px)</option>`;
+    optrow.appendChild(fmtSelect); optrow.appendChild(compSelect);
+    card.appendChild(optrow);
+  }
+
+  const btnrow = document.createElement('div'); btnrow.className = 'btnrow';
+  const downloadBtn = document.createElement('button'); downloadBtn.className = 'btn'; downloadBtn.textContent = '↓ Save';
+  const baseName = `mh-rafi-extract-${index + 1}.${fmt.toLowerCase() === 'img' ? 'png' : fmt.toLowerCase()}`;
+  downloadBtn.onclick = async function () {
+    vibrate(10);
+    if (!loaded) return;
+    const origText = downloadBtn.textContent; downloadBtn.disabled = true; downloadBtn.textContent = 'Saving...';
+    try {
+      await saveWithOptions(srcData, baseName, fmtSelect.value, compSelect.value);
+    } catch (e) { /* saveWithOptions already has its own fallbacks */ }
+    downloadBtn.disabled = false; downloadBtn.textContent = origText;
+  };
+  btnrow.appendChild(downloadBtn);
+
+  const copySrcBtn = document.createElement('button'); copySrcBtn.className = 'btn secondary'; copySrcBtn.textContent = 'Copy link';
+  copySrcBtn.style.display = isDataUri ? 'none' : 'block';
+  copySrcBtn.onclick = function () {
+    vibrate(6);
+    navigator.clipboard.writeText(srcData).then(() => { copySrcBtn.textContent = 'Copied ✓'; setTimeout(() => copySrcBtn.textContent = 'Copy link', 1500); });
+  };
+  btnrow.appendChild(copySrcBtn);
+
+  if (navigator.share) {
+    const shareNativeBtn = document.createElement('button');
+    shareNativeBtn.className = 'btn secondary'; shareNativeBtn.textContent = '📤 Share';
+    shareNativeBtn.onclick = async function () {
+      vibrate(8);
+      if (!loaded) return;
+      try {
+        const blob = await fetch(srcData).then(r => r.blob());
+        const ext = fmt.toLowerCase() === 'img' ? 'png' : fmt.toLowerCase();
+        const defaultMime = { image: 'image/png', video: 'video/mp4', audio: 'audio/mpeg' }[mediaKind];
+        const file = new File([blob], `media-${index + 1}.${ext}`, { type: blob.type || defaultMime });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Media' });
+        } else {
+          await navigator.share({ url: srcData, title: 'Media' });
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          try { await navigator.share({ url: srcData }); } catch (e2) { /* share cancelled or unsupported */ }
+        }
+      }
+    };
+    btnrow.appendChild(shareNativeBtn);
+  }
+  card.appendChild(btnrow);
+
+  /* ---------- EXIF metadata (images only) ---------- */
+  if (mediaKind === 'image') {
+    const exifBtn = document.createElement('button');
+    exifBtn.className = 'btn secondary'; exifBtn.style.marginTop = '8px';
+    exifBtn.textContent = 'ℹ️ Metadata';
+    const exifPanel = document.createElement('div'); exifPanel.className = 'exifpanel';
+    let exifLoaded = false;
+    exifBtn.onclick = async function () {
+      vibrate(6);
+      if (exifPanel.classList.contains('show')) { exifPanel.classList.remove('show'); return; }
+      exifPanel.classList.add('show');
+      if (exifLoaded) return;
+      exifPanel.innerHTML = `<div class="empty-exif">${t('readingMetadata')}</div>`;
+      try {
+        const buf = await fetch(srcData).then(r => r.arrayBuffer());
+        const exif = parseExifFromArrayBuffer(buf);
+        exifLoaded = true;
+        if (exif && exif._unsupported === 'heic') {
+          exifPanel.innerHTML = `<div class="empty-exif">${t('heicUnsupported')}</div>`;
+          return;
+        }
+        if (!exif) {
+          exifPanel.innerHTML = `<div class="empty-exif">${t('noExifFound')}</div>`;
+          return;
+        }
+        exifPanel.innerHTML = '';
+        Object.entries(exif).forEach(([k, v]) => {
+          if (k.startsWith('_')) return;
+          const row = document.createElement('div'); row.className = 'row';
+          row.innerHTML = `<span>${escapeHtml(k)}</span><b>${escapeHtml(String(v))}</b>`;
+          exifPanel.appendChild(row);
+        });
+      } catch (e) {
+        exifLoaded = true;
+        exifPanel.innerHTML = `<div class="empty-exif">${t('couldNotReadMetadata')}</div>`;
+      }
+    };
+    card.appendChild(exifBtn);
+    card.appendChild(exifPanel);
+  }
+
+
+  if (mediaKind === 'image') {
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn secondary'; shareBtn.style.marginTop = '8px';
+    shareBtn.textContent = '🔗 Create shareable link';
+    const shareBox = document.createElement('div'); shareBox.className = 'sharelink';
+    const shareInput = document.createElement('input'); shareInput.type = 'text'; shareInput.readOnly = true;
+    const shareCopyBtn = document.createElement('button'); shareCopyBtn.textContent = 'Copy';
+    shareCopyBtn.type = 'button';
+    shareCopyBtn.onclick = () => {
+      vibrate(8);
+      navigator.clipboard.writeText(shareInput.value).then(() => { shareCopyBtn.textContent = '✓'; setTimeout(() => shareCopyBtn.textContent = 'Copy', 1500); });
+    };
+    shareBox.appendChild(shareInput); shareBox.appendChild(shareCopyBtn);
+    if (navigator.share) {
+      const shareBoxNativeBtn = document.createElement('button');
+      shareBoxNativeBtn.textContent = '📤';
+      shareBoxNativeBtn.type = 'button';
+      shareBoxNativeBtn.onclick = () => {
+        vibrate(8);
+        navigator.share({ url: shareInput.value, title: 'Image link' }).catch(() => {});
+      };
+      shareBox.appendChild(shareBoxNativeBtn);
+    }
+    shareBtn.onclick = async () => {
+      if (!loaded) return;
+      vibrate(8);
+      shareBtn.disabled = true; const origShareText = shareBtn.textContent; shareBtn.textContent = 'Uploading...';
+      const ext = fmt.toLowerCase() === 'img' ? 'png' : fmt.toLowerCase();
+      try {
+        await shareImageLink(srcData, `IMG-${index + 1}.${ext}`, shareBox, shareInput);
+      } catch (e) { /* error already shown via islandShow/log */ }
+      shareBtn.disabled = false; shareBtn.textContent = origShareText;
+    };
+    card.appendChild(shareBtn);
+    card.appendChild(shareBox);
+  }
+  gallery.appendChild(card);
+}
+
+/* ---------- zip downloads ---------- */
+async function zipImages(list, filename, btn) {
+  if (!list.length) return;
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = t('buildingZip');
+  islandShow(t('buildingZip'), 'busy');
+  const zip = new JSZip();
+  let count = 0;
+  for (let i = 0; i < list.length; i++) {
+    islandProgress(Math.round((i/list.length)*100));
+    try {
+      const blob = await fetch(list[i]).then(r => r.blob());
+      const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+      zip.file(`media-${i + 1}.${ext}`, blob);
+      count++;
+    } catch (e) { /* skip unreachable */ }
+  }
+  if (count === 0) {
+    btn.textContent = t('zipFailed');
+    islandShow(t('zipZero'), 'err'); islandHide(2500);
+    setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 2500);
+    return;
+  }
+  const content = await zip.generateAsync({ type: 'blob' });
+  triggerDownload(URL.createObjectURL(content), filename);
+  islandShow(t('zipDone', { n: count }), ''); islandHide(3000);
+  btn.disabled = false; btn.textContent = orig;
+}
+downloadAllBtn.addEventListener('click', () => {
+  vibrate(10);
+  const items = allImages.map(m => m.url);
+  zipImages(items, 'mh-rafi-extracted-all.zip', downloadAllBtn);
+});
+downloadSelectedBtn.addEventListener('click', () => {
+  vibrate(10);
+  const imgs = [...selected].map(idx => allImages[idx].url);
+  zipImages(imgs, 'mh-rafi-extracted-selected.zip', downloadSelectedBtn);
+});
+
+/* ---------- lightbox + parallax ---------- */
+lightbox.addEventListener('click', () => lightbox.classList.remove('show'));
+const blobs = document.querySelectorAll('.blob');
+document.addEventListener('mousemove', (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 2;
+  const y = (e.clientY / window.innerHeight - 0.5) * 2;
+  blobs.forEach((b, i) => { const s = (i + 1) * 10; b.style.transform = `translate(${x*s}px, ${y*s}px)`; });
+});
+
+/* ---------- direct photo info: standalone EXIF + GPS viewer (no scan pipeline needed) ---------- */
+dropZoneExifBox.addEventListener('dragover', e => { e.preventDefault(); dropZoneExifBox.classList.add('drag'); });
+dropZoneExifBox.addEventListener('dragleave', () => dropZoneExifBox.classList.remove('drag'));
+dropZoneExifBox.addEventListener('drop', e => {
+  e.preventDefault(); dropZoneExifBox.classList.remove('drag');
+  if (e.dataTransfer.files[0]) { photoFile.files = e.dataTransfer.files; photoFile.dispatchEvent(new Event('change')); }
+});
+let photoInfoLeafletMap = null;
+photoFile.addEventListener('change', async function () {
+  const file = this.files[0];
+  if (!file) return;
+  vibrate(8);
+  photoInfoResult.style.display = 'block';
+  photoInfoPreview.src = URL.createObjectURL(file);
+  photoInfoExif.innerHTML = `<div class="empty-exif">${t('readingMetadata')}</div>`;
+  photoInfoMap.style.display = 'none';
+  photoInfoDebug.style.display = 'none';
+  if (photoInfoLeafletMap) { photoInfoLeafletMap.remove(); photoInfoLeafletMap = null; }
+
+  try {
+    const buf = await file.arrayBuffer();
+    const exif = parseExifFromArrayBuffer(buf);
+    const diag = diagnoseImageMetadata(buf);
+    diag.fileSize = file.size;
+    diag.fileType = file.type || '(unknown — browser gave no MIME type)';
+    photoInfoDebug.style.display = 'block';
+    photoInfoDebugContent.textContent = JSON.stringify(diag, null, 2);
+    const visibleKeys = exif ? Object.keys(exif).filter(k => !k.startsWith('_')) : [];
+    if (exif && exif._unsupported === 'heic') {
+      photoInfoExif.innerHTML = `<div class="empty-exif">${t('heicUnsupported')}</div>`;
+    } else if (!exif || !visibleKeys.length) {
+      photoInfoExif.innerHTML = `<div class="empty-exif">${t('noExifFound')}</div>`;
+    } else {
+      photoInfoExif.innerHTML = '';
+      visibleKeys.forEach(k => {
+        const row = document.createElement('div'); row.className = 'row';
+        row.innerHTML = `<span>${escapeHtml(k)}</span><b>${escapeHtml(String(exif[k]))}</b>`;
+        photoInfoExif.appendChild(row);
+      });
+    }
+    if (exif && typeof exif._lat === 'number' && typeof exif._lon === 'number') {
+      photoInfoMap.style.display = 'block';
+      photoInfoLeafletMap = L.map(photoInfoMap).setView([exif._lat, exif._lon], 14);
+      photoInfoLeafletMap.on('click', (e) => { window.open(`https://www.google.com/maps?q=${e.latlng.lat},${e.latlng.lng}`, '_blank', 'noopener'); });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(photoInfoLeafletMap);
+      L.marker([exif._lat, exif._lon], { icon: L.divIcon({ className: 'gps-pin-icon', iconSize: [14, 14], iconAnchor: [7, 14] }) })
+        .addTo(photoInfoLeafletMap)
+        .bindPopup(`<div>${exif._lat.toFixed(5)}, ${exif._lon.toFixed(5)}</div><div class="geo-label" id="geo-photoinfo" style="color:var(--ink-dim); font-size:0.68rem; margin-top:2px;">📍 …</div><a href="https://www.google.com/maps?q=${exif._lat},${exif._lon}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:6px 10px;border-radius:8px;background:var(--mint);color:#04150e;font-weight:700;font-size:0.72rem;text-decoration:none;">${t('openInGoogleMaps')}</a>`)
+        .openPopup();
+      reverseGeocode(exif._lat, exif._lon).then(label => {
+        const el = photoInfoMap.querySelector('#geo-photoinfo');
+        if (el) el.textContent = label ? `📍 ${label}` : t('geoUnavailable');
+      });
+    }
+  } catch (e) {
+    photoInfoExif.innerHTML = `<div class="empty-exif">${t('couldNotReadMetadata')}</div>`;
+  }
+});
+
+/* ============================= PDF EXTRACTION ============================= */
+const PDF_MAX_SIZE = 25 * 1024 * 1024;
+const PDF_MAX_PAGES = 80;
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+dropZonePdf.addEventListener('dragover', e => { e.preventDefault(); dropZonePdf.classList.add('drag'); });
+dropZonePdf.addEventListener('dragleave', () => dropZonePdf.classList.remove('drag'));
+dropZonePdf.addEventListener('drop', e => {
+  e.preventDefault(); dropZonePdf.classList.remove('drag');
+  if (e.dataTransfer.files[0]) { pdfFile.files = e.dataTransfer.files; pdfFile.dispatchEvent(new Event('change')); }
+});
+
+function pdfImageToDataUrl(img) {
+  const { width, height, data, kind } = img;
+  if (!width || !height || !data) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(width, height);
+  const out = imageData.data;
+  try {
+    if (kind === 3) { // RGBA_32BPP
+      out.set(data);
+    } else if (kind === 2) { // RGB_24BPP
+      for (let i = 0, j = 0; i < data.length; i += 3, j += 4) {
+        out[j] = data[i]; out[j+1] = data[i+1]; out[j+2] = data[i+2]; out[j+3] = 255;
+      }
+    } else if (kind === 1) { // GRAYSCALE_1BPP packed bits
+      const bytesPerRow = Math.ceil(width / 8);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const byte = data[y * bytesPerRow + (x >> 3)] || 0;
+          const bit = 7 - (x % 8);
+          const val = ((byte >> bit) & 1) ? 255 : 0;
+          const j = (y * width + x) * 4;
+          out[j] = val; out[j+1] = val; out[j+2] = val; out[j+3] = 255;
+        }
+      }
+    } else {
+      return null; // unsupported kind, fall back to page render
+    }
+  } catch (e) { return null; }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+async function renderPdfPageAsImage(page) {
+  const viewport = page.getViewport({ scale: 1.35 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width; canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+async function extractPageImages(page, pageNum) {
+  const found = [];
+  try {
+    const opList = await withTimeout(page.getOperatorList(), 6000, null);
+    if (!opList) return found; // timed out getting op list — fall back to render
+    const seenNames = new Set();
+    const jobs = [];
+    for (let i = 0; i < opList.fnArray.length; i++) {
+      const fn = opList.fnArray[i];
+      if (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintJpegXObject) {
+        const name = opList.argsArray[i][0];
+        if (!name || seenNames.has(name)) continue;
+        seenNames.add(name);
+        jobs.push(name);
+      }
+    }
+    // resolve all image objects in parallel, each capped at 3s so nothing can hang
+    const results = await Promise.all(jobs.map(name =>
+      withTimeout(new Promise((resolve) => {
+        try { page.objs.get(name, resolve); } catch (e) { resolve(null); }
+      }), 3000, null)
+    ));
+    results.forEach(imgObj => {
+      if (imgObj) {
+        const dataUrl = pdfImageToDataUrl(imgObj);
+        if (dataUrl) found.push(dataUrl);
+      }
+    });
+  } catch (e) { /* fall back to page render below */ }
+  return found;
+}
+
+async function processPdfPage(pdf, p) {
+  try {
+    const page = await pdf.getPage(p);
+    const embedded = await extractPageImages(page, p);
+    if (embedded.length) {
+      log(t('pageEmbedded', { p, n: embedded.length }), 'ok', 'PDF');
+      return embedded;
+    }
+    const rendered = await renderPdfPageAsImage(page);
+    log(t('pageRendered', { p }), '', 'PDF');
+    return [rendered];
+  } catch (e) {
+    log(t('pageError', { p }), 'err', 'PDF');
+    return [];
+  }
+}
+
+async function extractImagesFromPdf(file) {
+  resetUI();
+  pendingScanMeta = { type: 'pdf', label: file.name };
+  filebar.classList.add('show');
+  fname.textContent = `${file.name} · ${(file.size/1024/1024).toFixed(1)}MB`;
+
+  if (file.size > PDF_MAX_SIZE) {
+    status.className = 'status err show';
+    status.innerText = t('pdfTooLarge', { size: (file.size/1024/1024).toFixed(1), max: 25 });
+    return;
+  }
+
+  islandShow(t('loadingPdf'), 'busy');
+  log(t('pdfLoaded', { name: file.name }), 'ok', 'READ');
+  status.innerText = t('parsingPdf'); status.className = 'status show';
+  progwrap.classList.add('show');
+
+  const imagesSet = [];
+  const pushImg = (u) => { if (u && !imagesSet.includes(u)) imagesSet.push(u); };
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPages = Math.min(pdf.numPages, PDF_MAX_PAGES);
+    const extra = pdf.numPages > PDF_MAX_PAGES ? t('pdfExtraPages', { max: PDF_MAX_PAGES }) : '';
+    log(t('pdfTotalPages', { total: pdf.numPages, extra }), 'ok', 'PDF');
+
+    for (let batchStart = 1; batchStart <= totalPages; batchStart += 3) {
+      const batchEnd = Math.min(batchStart + 2, totalPages);
+      islandShow(t('scanningPages', { start: batchStart, end: batchEnd, total: totalPages }), 'busy');
+      progbarFill.style.width = Math.round((batchEnd/totalPages)*100) + '%';
+      progtext.innerText = t('pagesDone', { done: batchEnd, total: totalPages });
+      islandProgress(Math.round((batchEnd/totalPages)*100));
+
+      const batchPages = [];
+      for (let p = batchStart; p <= batchEnd; p++) batchPages.push(p);
+      const batchResults = await Promise.all(batchPages.map(p => processPdfPage(pdf, p)));
+      batchResults.forEach(imgs => imgs.forEach(pushImg));
+    }
+  } catch (err) {
+    log(t('couldNotReadPdf', { err: err.message }), 'err', 'FAIL');
+    status.className = 'status err show'; status.innerText = t('couldNotReadPdfShort');
+    islandShow(t('errorOccurred'), 'err'); islandHide(2500);
+    progwrap.classList.remove('show');
+    return;
+  }
+
+  progwrap.classList.remove('show');
+  finalizeResults(imagesSet, []);
+}
+
+pdfFile.addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  extractImagesFromPdf(file);
+});
+
+/* ============================= SHARE LINK (via ImgBB — direct browser upload, no backend needed) ============================= */
+async function shareImageLink(srcData, filename, resultBox, resultInput) {
+  resultBox.classList.remove('show');
+  const apiKey = imgbbKeyInput.value.trim();
+  if (!apiKey) {
+    islandShow(t('noApiKey'), 'err');
+    islandHide(3000);
+    throw new Error('no api key');
+  }
+  try {
+    const blob = await fetch(srcData).then(r => r.blob());
+    const form = new FormData();
+    form.append('image', blob, filename);
+    const res = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(apiKey), {
+      method: 'POST',
+      body: form
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+    }
+    const url = data.data.url || data.data.display_url;
+    resultInput.value = url;
+    resultBox.classList.add('show');
+    vibrate(10);
+    return url;
+  } catch (err) {
+    islandShow(t('shareFailed', { err: err.message }), 'err');
+    islandHide(3500);
+    log(t('imgbbUploadError', { err: err.message }), 'err', 'SHARE');
+    throw err;
+  }
+}
+</script>
+</body>
+</html>
