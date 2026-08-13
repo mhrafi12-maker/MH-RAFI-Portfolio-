@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg">
+<link rel="apple-touch-icon" href="https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg">
+<title>Teacher Info by MH RAFI</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg:#f2f2f7; --text:#111114; --muted:#6e6e73;
+  --glass:rgba(255,255,255,.68); --glass2:rgba(255,255,255,.88);
+  --line:rgba(0,0,0,.07); --blue:#007aff; --green:#34c759;
+  --red:#ff3b30; --purple:#af52de; --shadow:0 18px 50px rgba(0,0,0,.09);
+}
+html.dark{
+  --bg:#08080a; --text:#f5f5f7; --muted:#98989f;
+  --glass:rgba(28,28,30,.72); --glass2:rgba(30,30,32,.92);
+  --line:rgba(255,255,255,.09); --shadow:0 20px 60px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  margin:0; min-height:100vh; color:var(--text);
+  font-family:"Noto Sans Bengali",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  background:
+    radial-gradient(circle at 8% 0%,rgba(0,122,255,.15),transparent 30%),
+    radial-gradient(circle at 92% 8%,rgba(175,82,222,.14),transparent 28%),
+    radial-gradient(circle at 50% 100%,rgba(52,199,89,.08),transparent 32%),
+    var(--bg);
+  transition:background .3s,color .3s;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+/* iOS-like navigation */
+.nav{
+  position:sticky;top:0;z-index:1000;
+  min-height:64px;padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brandIcon{
+  width:40px;height:40px;border-radius:13px;display:grid;place-items:center;
+  color:white;background:linear-gradient(145deg,#007aff,#5856d6);
+  box-shadow:0 8px 22px rgba(0,122,255,.25)
+}
+.brandTitle{font-weight:800;font-size:16px;line-height:1.1}
+.brandSub{font-size:10px;color:var(--muted);margin-top:3px}
+.navActions{display:flex;gap:7px}
+.iconBtn{
+  width:40px;height:40px;border:0;border-radius:50%;
+  color:var(--text);background:rgba(118,118,128,.12);
+  display:grid;place-items:center;font-size:18px;
+  transition:transform .18s,background .2s;
+}
+.iconBtn:active{transform:scale(.9)}
+
+/* hero */
+.hero{padding:34px 18px 25px;text-align:center}
+.heroBadge{
+  width:76px;height:76px;margin:auto;border-radius:25px;display:grid;place-items:center;
+  font-size:38px;background:linear-gradient(145deg,rgba(0,122,255,.13),rgba(175,82,222,.14));
+  box-shadow:0 15px 40px rgba(0,122,255,.12);animation:float 4s ease-in-out infinite;
+}
+@keyframes float{50%{transform:translateY(-5px)}}
+.hero h1{margin:16px 0 5px;font-size:clamp(28px,7vw,44px);letter-spacing:-1.5px}
+.hero p{margin:0;color:var(--muted);font-size:13px}
+
+/* layout */
+.wrap{width:min(1080px,94%);margin:auto}
+.glass{
+  background:var(--glass);border:1px solid rgba(255,255,255,.65);
+  box-shadow:var(--shadow);backdrop-filter:blur(26px) saturate(170%);
+  -webkit-backdrop-filter:blur(26px) saturate(170%);border-radius:28px;
+}
+.searchCard{padding:17px;margin-bottom:18px}
+.label{font-size:14px;font-weight:800;margin-bottom:9px}
+.searchRow{display:flex;gap:8px}
+.input{
+  flex:1;min-width:0;border:0;outline:0;padding:14px 15px;border-radius:16px;
+  color:var(--text);background:rgba(118,118,128,.11);
+}
+.primary{
+  border:0;border-radius:16px;padding:0 20px;color:white;font-weight:800;
+  background:linear-gradient(145deg,#007aff,#0066e6);
+  box-shadow:0 9px 24px rgba(0,122,255,.22);transition:.18s;
+}
+.primary:active{transform:scale(.95)}
+.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.quick button{
+  border:0;padding:7px 11px;border-radius:100px;color:var(--muted);
+  background:rgba(118,118,128,.10);font-size:11px
+}
+
+/* loading / error */
+.loading{padding:34px;text-align:center;margin-bottom:18px}
+.spinner{
+  width:38px;height:38px;margin:auto;border:3px solid rgba(0,122,255,.14);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loadingText{margin-top:10px;color:var(--muted);font-size:13px}
+.notice{padding:24px;text-align:center;margin-bottom:18px}
+.notice b{display:block;margin-bottom:5px}
+
+/* institute */
+.institute{padding:20px;margin-bottom:18px}
+.instHead{display:flex;gap:13px;align-items:center}
+.instIcon{
+  width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;
+  background:rgba(0,122,255,.10)
+}
+.instName{font-size:20px;font-weight:800}
+.eiin{font-size:12px;color:var(--muted);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.stat{padding:14px 5px;text-align:center;border-radius:18px;background:rgba(118,118,128,.08)}
+.num{font-size:22px;font-weight:800;color:var(--blue)}
+.stat span{font-size:10px;color:var(--muted)}
+.section{margin-top:20px}
+.sectionTitle{font-size:14px;font-weight:800;margin-bottom:9px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:7px 10px;border-radius:100px;background:rgba(0,122,255,.09);color:var(--blue);font-size:11px}
+
+/* filters */
+.filter{padding:12px;margin-bottom:16px}
+.filterRow{display:flex;gap:8px}
+.filter .input{padding:12px 14px}
+.sortBtn{border:0;border-radius:15px;padding:0 13px;background:rgba(118,118,128,.12);color:var(--text)}
+.resultMeta{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px;color:var(--muted);font-size:11px}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+.card{
+  position:relative;overflow:hidden;padding:17px;border-radius:26px;
+  background:var(--glass2);border:1px solid var(--line);box-shadow:0 12px 36px rgba(0,0,0,.07);
+  animation:cardIn .35s ease both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.glow{position:absolute;width:100px;height:100px;right:-45px;top:-45px;border-radius:50%;background:rgba(0,122,255,.08);filter:blur(8px)}
+.profile{position:relative;display:flex;align-items:center;gap:12px}
+.avatar,.avatarPlaceholder{
+  width:70px;height:70px;border-radius:22px;flex:none;object-fit:cover;
+  border:2px solid rgba(255,255,255,.8);box-shadow:0 7px 18px rgba(0,0,0,.09)
+}
+.avatar{cursor:zoom-in}
+.avatarPlaceholder{display:grid;place-items:center;background:linear-gradient(145deg,#e5e5ea,#c7c7cc);font-size:28px}
+html.dark .avatarPlaceholder{background:linear-gradient(145deg,#3a3a3c,#242426)}
+.name{font-size:16px;font-weight:800;line-height:1.35}
+.fullName{font-size:11px;color:var(--muted);margin-top:3px}
+.badge{display:inline-block;margin-top:6px;padding:5px 8px;border-radius:100px;background:rgba(52,199,89,.11);color:#248a3d;font-size:10px}
+.infoList{display:flex;flex-direction:column;gap:6px;margin-top:15px}
+.infoRow{display:flex;gap:9px;padding:9px 10px;border-radius:13px;background:rgba(118,118,128,.065)}
+.infoIcon{width:23px;flex:none;text-align:center;font-size:13px}
+.infoKey{display:block;color:var(--muted);font-size:9px;margin-bottom:2px}
+.infoValue{display:block;font-size:11px;font-weight:600;line-height:1.45;word-break:break-word}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.action{border:0;border-radius:13px;padding:9px 3px;font-size:10px;font-weight:800}
+.call{background:rgba(52,199,89,.12);color:#248a3d}
+.email{background:rgba(0,122,255,.10);color:var(--blue)}
+.copy{background:rgba(118,118,128,.10);color:var(--muted)}
+.share{background:rgba(175,82,222,.11);color:var(--purple)}
+.empty{grid-column:1/-1;padding:38px;text-align:center;color:var(--muted);border-radius:25px;background:var(--glass2)}
+
+/* bottom toast */
+.toast{
+  position:fixed;left:50%;bottom:22px;z-index:10001;transform:translate(-50%,20px);
+  opacity:0;pointer-events:none;padding:11px 16px;border-radius:100px;color:white;
+  background:rgba(30,30,32,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  font-size:12px;box-shadow:0 12px 35px rgba(0,0,0,.25);transition:.25s
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* fullscreen photo */
+.viewer{
+  position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)
+}
+.viewer.show{display:flex}
+.fullImage{max-width:96vw;max-height:88vh;object-fit:contain;border-radius:24px;box-shadow:0 30px 100px rgba(0,0,0,.55);animation:zoom .22s ease}
+@keyframes zoom{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.closeViewer{
+  position:absolute;top:max(16px,env(safe-area-inset-top));right:17px;width:46px;height:46px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.16);color:white;font-size:26px
+}
+.viewerHint{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));color:rgba(255,255,255,.7);font-size:11px}
+
+/* bottom sheet settings */
+.sheetBack{
+  position:fixed;inset:0;z-index:2000;display:none;background:rgba(0,0,0,.25);
+  backdrop-filter:blur(3px)
+}
+.sheetBack.show{display:block}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;padding:16px 18px max(18px,env(safe-area-inset-bottom));
+  background:var(--glass2);border-radius:28px 28px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.18);
+  backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)
+}
+.grabber{width:38px;height:5px;border-radius:10px;background:rgba(118,118,128,.35);margin:0 auto 15px}
+.settingRow{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line)}
+.settingRow:last-child{border-bottom:0}
+.settingText b{display:block;font-size:14px}.settingText span{font-size:10px;color:var(--muted)}
+.switch{
+  width:50px;height:30px;border:0;border-radius:20px;background:#d1d1d6;position:relative
+}
+.switch:after{content:"";position:absolute;width:24px;height:24px;top:3px;left:3px;border-radius:50%;background:white;box-shadow:0 2px 5px #999;transition:.2s}
+.switch.on{background:var(--green)}.switch.on:after{left:23px}
+
+/* footer */
+.footer{text-align:center;padding:32px 12px 46px;color:var(--muted);font-size:11px}
+.footer strong{color:var(--text)}
+
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+@media(max-width:430px){
+  .searchRow{flex-direction:column}.primary{height:48px}
+  .filterRow{flex-direction:row}.stats .num{font-size:20px}
+}
+
+/* iOS-like subtle Liquid Light background */
+.liquid-bg{
+  position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(255,255,255,.75),transparent 38%),
+    var(--bg);
+}
+html.dark .liquid-bg{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(255,255,255,.06),transparent 38%),
+    var(--bg);
+}
+.blob{
+  position:absolute; display:block; border-radius:50%;
+  filter:blur(55px); opacity:.34;
+  will-change:transform;
+  mix-blend-mode:multiply;
+}
+html.dark .blob{opacity:.18;mix-blend-mode:screen}
+.blob1{
+  width:330px;height:330px;left:-110px;top:8%;
+  background:rgba(0,122,255,.30);
+  animation:liquid1 18s ease-in-out infinite alternate;
+}
+.blob2{
+  width:290px;height:290px;right:-100px;top:24%;
+  background:rgba(175,82,222,.25);
+  animation:liquid2 21s ease-in-out infinite alternate;
+}
+.blob3{
+  width:360px;height:360px;left:15%;bottom:-190px;
+  background:rgba(52,199,89,.20);
+  animation:liquid3 24s ease-in-out infinite alternate;
+}
+.blob4{
+  width:250px;height:250px;right:18%;bottom:-100px;
+  background:rgba(255,149,0,.14);
+  animation:liquid4 20s ease-in-out infinite alternate;
+}
+.liquid-shine{
+  position:absolute;inset:-30%;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.10) 48%,transparent 61%);
+  transform:translateX(-45%) rotate(8deg);
+  animation:shine 15s ease-in-out infinite;
+}
+html.dark .liquid-shine{opacity:.25}
+@keyframes liquid1{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(120px,70px) scale(1.12)}
+  100%{transform:translate(40px,170px) scale(.92)}
+}
+@keyframes liquid2{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-100px,90px) scale(.9)}
+  100%{transform:translate(-40px,-50px) scale(1.13)}
+}
+@keyframes liquid3{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(80px,-70px) scale(1.08)}
+  100%{transform:translate(-80px,-20px) scale(.94)}
+}
+@keyframes liquid4{
+  0%{transform:translate(0,0) scale(.95)}
+  50%{transform:translate(-100px,-90px) scale(1.13)}
+  100%{transform:translate(40px,-20px) scale(1)}
+}
+@keyframes shine{
+  0%,20%{transform:translateX(-50%) rotate(8deg)}
+  60%,100%{transform:translateX(50%) rotate(8deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  .blob,.liquid-shine{animation:none!important}
+}
+
+
+/* PREMIUM V2 */
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.06) 50%,transparent 65%);animation:ambientSweep 18s ease-in-out infinite}
+@keyframes ambientSweep{0%,20%{transform:translateX(-45%)}70%,100%{transform:translateX(45%)}}
+.glass{box-shadow:0 20px 55px rgba(0,0,0,.065),inset 0 1px 0 rgba(255,255,255,.55)}
+.card{transition:transform .22s,box-shadow .22s,border-color .22s}
+.card:hover{transform:translateY(-3px);box-shadow:0 22px 55px rgba(0,0,0,.11)}
+.input:focus{border-color:rgba(0,122,255,.3);box-shadow:0 0 0 4px rgba(0,122,255,.08)}
+.premiumProfileBack{position:fixed;inset:0;z-index:3000;display:none;overflow:auto;background:var(--bg);padding-bottom:max(35px,env(safe-area-inset-bottom))}
+.premiumProfileBack.show{display:block;animation:profileIn .24s ease}
+@keyframes profileIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.profileNav{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:color-mix(in srgb,var(--bg) 75%,transparent);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);border-bottom:1px solid var(--line)}
+.profileHero{width:min(700px,92%);margin:30px auto 16px;padding:28px;text-align:center;border-radius:34px;background:var(--glass);border:1px solid rgba(255,255,255,.7);box-shadow:0 25px 65px rgba(0,0,0,.08);backdrop-filter:blur(26px)}
+.profilePhoto,.profilePhotoPlaceholder{width:130px;height:130px;margin:auto;border-radius:38px;object-fit:cover;border:3px solid rgba(255,255,255,.85);box-shadow:0 18px 45px rgba(0,0,0,.14)}
+.profilePhoto{cursor:zoom-in}.profilePhotoPlaceholder{display:grid;place-items:center;font-size:55px;background:rgba(118,118,128,.12)}
+.profileHero h2{margin:16px 0 4px;font-size:25px}.profileHero p{margin:0;color:var(--muted);font-size:12px}
+.profileActions{display:flex;justify-content:center;gap:8px;margin-top:17px;flex-wrap:wrap}
+.profileAction{border:0;border-radius:15px;padding:10px 14px;background:rgba(118,118,128,.11);color:var(--text);font-size:11px;font-weight:800}
+.profileInfo{width:min(700px,92%);margin:auto;padding:18px;border-radius:28px;background:var(--glass2);border:1px solid var(--line);box-shadow:var(--shadow)}
+.profileInfo .infoRow{padding:12px;border-radius:16px}
+@media(max-width:700px){.profileHero{padding:22px}.profilePhoto,.profilePhotoPlaceholder{width:112px;height:112px;border-radius:34px}}
+
+
+/* ===== iOS 27 INSPIRED LIQUID GLASS ===== */
+:root{
+  --iosBlue:#007aff;
+  --iosIndigo:#5856d6;
+  --iosGlass:rgba(255,255,255,.58);
+  --iosStroke:rgba(255,255,255,.72);
+}
+html.dark{
+  --iosGlass:rgba(30,30,32,.58);
+  --iosStroke:rgba(255,255,255,.12);
+}
+body{
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+body:after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:radial-gradient(circle at 50% -20%,rgba(255,255,255,.18),transparent 35%);
+  mix-blend-mode:soft-light;opacity:.45;
+}
+.nav{
+  height:74px!important;
+  padding-top:max(10px,env(safe-area-inset-top))!important;
+  background:color-mix(in srgb,var(--bg) 64%,transparent)!important;
+  backdrop-filter:blur(30px) saturate(190%)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(190%)!important;
+  border-bottom:1px solid rgba(255,255,255,.45)!important;
+}
+html.dark .nav{border-bottom-color:rgba(255,255,255,.08)!important}
+.brandIcon.appAvatar{
+  width:44px!important;height:44px!important;border-radius:15px!important;
+  padding:0!important;overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.75)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.8)!important;
+  background:none!important;
+}
+.brandIcon.appAvatar img{
+  width:100%;height:100%;display:block;object-fit:cover;
+}
+.hero{padding-top:48px!important}
+.heroBadge.appHeroAvatar{
+  width:92px!important;height:92px!important;border-radius:30px!important;
+  padding:0!important;overflow:hidden!important;
+  background:var(--iosGlass)!important;
+  border:1px solid var(--iosStroke)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.8)!important;
+  animation:heroFloat 5s ease-in-out infinite!important;
+}
+.heroBadge.appHeroAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+@keyframes heroFloat{
+  0%,100%{transform:translateY(0) rotate(-1deg)}
+  50%{transform:translateY(-5px) rotate(1deg)}
+}
+.hero h1{
+  letter-spacing:-.7px!important;
+  font-weight:800!important;
+}
+.creatorPill{
+  display:inline-flex;align-items:center;gap:7px;margin-top:10px;
+  padding:7px 11px;border-radius:999px;
+  font-size:10px;font-weight:800;color:var(--muted);
+  background:rgba(118,118,128,.10);
+  border:1px solid rgba(255,255,255,.45);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.creatorPill span{
+  width:7px;height:7px;border-radius:50%;background:#34c759;
+  box-shadow:0 0 0 4px rgba(52,199,89,.12),0 0 12px rgba(52,199,89,.5);
+}
+.glass,.card,.profileHero,.profileInfo{
+  backdrop-filter:blur(28px) saturate(180%)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(180%)!important;
+}
+.glass{
+  background:color-mix(in srgb,var(--glass) 90%,transparent)!important;
+  border:1px solid var(--iosStroke)!important;
+  box-shadow:0 22px 70px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.72)!important;
+}
+html.dark .glass{
+  box-shadow:0 25px 75px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+.searchCard{
+  border-radius:30px!important;
+}
+.input{
+  height:52px!important;border-radius:18px!important;
+  background:rgba(118,118,128,.08)!important;
+}
+.primary{
+  border-radius:18px!important;
+  box-shadow:0 10px 24px rgba(0,122,255,.22)!important;
+}
+.iconBtn{
+  border-radius:15px!important;
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+}
+.card{
+  border-radius:28px!important;
+  background:color-mix(in srgb,var(--glass2) 78%,transparent)!important;
+}
+.footer{
+  padding-bottom:max(35px,env(safe-area-inset-bottom))!important;
+}
+@media(max-width:520px){
+  .nav{height:68px!important}
+  .brandIcon.appAvatar{width:40px!important;height:40px!important;border-radius:14px!important}
+  .heroBadge.appHeroAvatar{width:84px!important;height:84px!important;border-radius:28px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .heroBadge.appHeroAvatar,.blob,.liquid-shine{animation:none!important}
+}
+
+</style>
+</head>
+
+<body>
+<div class="liquid-bg" aria-hidden="true">
+  <span class="blob blob1"></span>
+  <span class="blob blob2"></span>
+  <span class="blob blob3"></span>
+  <span class="blob blob4"></span>
+  <div class="liquid-shine"></div>
+</div>
+
+<nav class="nav">
+  <div class="brand">
+    <div class="brandIcon appAvatar"><img src="https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg" alt="MH RAFI"></div>
+    <div>
+      <div class="brandTitle">Teacher Info</div>
+      <div class="brandSub">by MH RAFI</div>
+    </div>
+  </div>
+  <div class="navActions">
+    <button class="iconBtn" onclick="openSheet()" aria-label="Settings">⚙️</button>
+    <button class="iconBtn" onclick="toggleTheme()" aria-label="Theme" id="themeBtn">☀️</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="heroBadge appHeroAvatar"><img src="https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg" alt="MH RAFI"></div>
+  <h1>Teacher Info</h1>
+  <p>Institute Teacher & Staff Information</p><div class="creatorPill"><span></span> MH RAFI • Premium Directory</div>
+</section>
+
+<main class="wrap">
+
+  <section class="glass searchCard">
+    <div class="label">🔎 প্রতিষ্ঠানের EIIN দিয়ে খুঁজুন</div>
+    <div class="searchRow">
+      <input id="eiin" class="input" inputmode="numeric" autocomplete="off" placeholder="যেমন: 107174">
+      <button class="primary" onclick="loadInstitute()">Search</button>
+    </div>
+    <div class="quick" id="recent"></div>
+  </section>
+
+
+  <section class="glass loading hidden" id="loading">
+    <div class="spinner"></div>
+    <div class="loadingText">API থেকে তথ্য সংগ্রহ করা হচ্ছে...</div>
+  </section>
+
+  <div id="result"></div>
+</main>
+
+<footer class="footer">
+  Teacher Info<br>
+  <strong>Designed & Developed by MH RAFI</strong>
+</footer>
+
+
+<div class="premiumProfileBack" id="profileBack">
+  <div class="profileNav">
+    <button class="iconBtn" onclick="closeProfile()">‹</button>
+    <strong>Teacher Profile</strong>
+    <button class="iconBtn" id="profileFavBtn" onclick="toggleProfileFavorite()">☆</button>
+  </div>
+  <div id="profileContent"></div>
+</div>
+<div class="viewer" id="viewer" onclick="closeViewer(event)">
+  <button class="closeViewer" onclick="closeViewer()">×</button>
+  <img id="fullImage" class="fullImage" src="" alt="Teacher Photo">
+  <div class="viewerHint">ছবির বাইরে চাপলে বন্ধ হবে</div>
+</div>
+
+<div class="sheetBack" id="sheetBack" onclick="closeSheet(event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="grabber"></div>
+    <div class="settingRow">
+      <div class="settingText"><b>Dark Mode</b><span>সিস্টেমের মতো iOS-style theme</span></div>
+      <button class="switch" id="darkSwitch" onclick="toggleTheme()"></button>
+    </div>
+    <div class="settingRow">
+      <div class="settingText"><b>Clear Recent Searches</b><span>আগের EIIN মুছে দিন</span></div>
+      <button class="iconBtn" onclick="clearRecent()">🗑️</button>
+    </div>
+    <div class="settingRow">
+      <div class="settingText"><b>About</b><span>Teacher Info by MH RAFI</span></div>
+      <button class="iconBtn" onclick="showToast('Teacher Info • MH RAFI')">ⓘ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+/* App identity image */
+window.MH_RAFI_PROFILE_IMAGE = "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg";
+
+const API = "https://api.lmnx9.shop/Institute/teacher.php?eiin=";
+let employees = [];
+let currentEIIN = "";
+let toastTimer;
+
+const $ = id => document.getElementById(id);
+
+function safe(v){
+  return String(v ?? "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+function attr(v){ return safe(v); }
+
+function pick(o, keys){
+  for(const k of keys){
+    if(o && o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k];
+  }
+  return "";
+}
+
+function iconFor(key){
+  const k=String(key).toLowerCase();
+  if(k.includes("মোবাইল")||k.includes("phone")||k.includes("mobile")) return "📱";
+  if(k.includes("ইমেইল")||k.includes("email")) return "✉️";
+  if(k.includes("জন্ম")||k.includes("birth")) return "🎂";
+  if(k.includes("বিষয়")||k.includes("বিষয়ের")||k.includes("subject")) return "📚";
+  if(k.includes("id")||k.includes("আইডি")) return "🪪";
+  if(k.includes("চিহ্ন")) return "🔖";
+  if(k.includes("পদ")) return "💼";
+  if(k.includes("ছবি")||k.includes("photo")||k.includes("image")) return "🖼️";
+  return "•";
+}
+
+function showToast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+async function loadInstitute(eiinOverride){
+  const eiin=(eiinOverride ?? $("eiin").value).trim();
+  if(!eiin){ showToast("⚠️ EIIN নম্বর দিন"); $("eiin").focus(); return; }
+
+  $("eiin").value=eiin;
+  $("loading").classList.remove("hidden");
+  $("result").innerHTML="";
+  currentEIIN=eiin;
+
+  try{
+    const res=await fetch(API+encodeURIComponent(eiin),{method:"GET",cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data=await res.json();
+    console.log("Teacher Info API:",data);
+    if(!data || (!data.lmnxdata && !data.lmnxData)) throw new Error("API response structure not recognized");
+    saveRecent(eiin);
+    render(data);
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(err){
+    console.error(err);
+    $("result").innerHTML=`<div class="glass notice"><b>❌ তথ্য পাওয়া যায়নি</b><span style="color:var(--muted);font-size:11px">${safe(err.message)}</span><br><br><span style="color:var(--muted);font-size:10px">API Network/Console-এ ঠিক থাকলেও যদি এখানে ব্যর্থ হয়, তাহলে API-এর CORS policy check করতে হবে।</span></div>`;
+  }finally{
+    $("loading").classList.add("hidden");
+  }
+}
+
+function normalizeRoot(data){
+  return data?.lmnxdata || data?.lmnxData || data?.data || {};
+}
+
+function render(data){
+  const root=normalizeRoot(data);
+  const inst=root.institute || root.Institute || root.ইনস্টিটিউট || {};
+  employees=Array.isArray(root.employees) ? root.employees :
+            Array.isArray(root.employee) ? root.employee :
+            Array.isArray(root.কর্মচারী) ? root.কর্মচারী : [];
+
+  const name=pick(inst,["name_bn","নাম_বি","নাম","name"]) || "প্রতিষ্ঠানের নাম";
+  const eiin=pick(inst,["eiin","EIIN"]) || currentEIIN;
+  const total=pick(inst,["total_employees","মোট সদস্য","মোট_সদস্য"]) || employees.length;
+  const totalSubjects=pick(inst,["total_subjects","মোট অংশগ্রহণকারী","মোট_বিষয়"]) || 0;
+  const design=inst.designation_summary || inst["পদবি_সারাংশ"] || inst["পদবি_সার অংশ"] || {};
+  const subjects=inst.subjects || inst["বিষয়সমূহ"] || inst["বিষয়সমূহ"] || [];
+
+  let html=`
+  <section class="glass institute">
+    <div class="instHead">
+      <div class="instIcon">🏫</div>
+      <div>
+        <div class="instName">${safe(name)}</div>
+        <div class="eiin">EIIN: ${safe(eiin)}</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num">${safe(total)}</div><span>মোট সদস্য</span></div>
+      <div class="stat"><div class="num">${employees.length}</div><span>দেখানো হয়েছে</span></div>
+      <div class="stat"><div class="num">${safe(totalSubjects)}</div><span>বিষয়</span></div>
+    </div>`;
+
+  if(design && typeof design==="object"){
+    html+=`<div class="section"><div class="sectionTitle">👔 পদবি অনুযায়ী সংখ্যা</div><div class="chips">`;
+    Object.entries(design).forEach(([k,v])=>html+=`<div class="chip">${safe(k)} · <b>${safe(v)}</b></div>`);
+    html+=`</div></div>`;
+  }
+
+  if(Array.isArray(subjects) && subjects.length){
+    html+=`<div class="section"><div class="sectionTitle">📚 বিষয়সমূহ</div><div class="chips">`;
+    subjects.forEach(s=>html+=`<div class="chip">${safe(s)}</div>`);
+    html+=`</div></div>`;
+  }
+  html+=`</section>`;
+
+  html+=`
+  <section class="glass filter">
+    <div class="filterRow">
+      <input id="filter" class="input" placeholder="🔍 নাম, পদবি, বিষয় বা যেকোনো তথ্য..." oninput="filterEmployees()">
+      <button class="sortBtn" onclick="sortEmployees()">↕️</button>
+    </div>
+  </section>
+  <div class="resultMeta"><span id="resultCount"></span><span>Teacher Info by MH RAFI</span></div>
+  <section class="grid" id="employeesGrid"></section>`;
+
+  $("result").innerHTML=html;
+  renderEmployees(employees);
+}
+
+function renderEmployees(list){
+  const grid=$("employeesGrid");
+  if(!grid) return;
+  if(!list.length){grid.innerHTML=`<div class="empty">👤 কোনো তথ্য পাওয়া যায়নি।</div>`; if($("resultCount")) $("resultCount").textContent="0 জন"; return;}
+  if($("resultCount")) $("resultCount").textContent=`${list.length} জন`;
+  grid.innerHTML=list.map((p,i)=>employeeCard(p,i)).join("");
+}
+
+function employeeCard(person,index){
+  const photo=pick(person,["ছবি","photo","image","photo_url","Photo","Image"]);
+  const name=pick(person,["পূর্ণ নাম","পুরো নাম","পূর্ণনাম","FullNameBn","full_name","name_bn","name"]) || "নাম পাওয়া যায়নি";
+  const en=pick(person,["FullName","full_name_en","name_en"]);
+  const designation=pick(person,["DesignationNameBn","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"]);
+  const mobile=pick(person,["মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"]);
+  const email=pick(person,["ইমেইল","email"]);
+
+  let info="";
+  Object.entries(person).forEach(([key,value])=>{
+    if(value===null || value===undefined || value==="") return;
+    if(["ছবি","photo","image","photo_url","Photo","Image"].includes(key)) return;
+    let display=typeof value==="object" ? JSON.stringify(value) : String(value);
+    info+=`<div class="infoRow"><div class="infoIcon">${iconFor(key)}</div><div><span class="infoKey">${safe(key)}</span><span class="infoValue">${safe(display)}</span></div></div>`;
+  });
+
+  const img=photo
+    ? `<img class="avatar" src="${attr(photo)}" alt="Teacher Photo" onclick="openViewer('${attr(photo)}')" onerror="this.outerHTML='<div class=\\'avatarPlaceholder\\'>👤</div>'">`
+    : `<div class="avatarPlaceholder">👤</div>`;
+
+  return `<article class="card">
+    <div class="glow"></div>
+    <div class="profile">
+      ${img}
+      <div>
+        <div class="name">${safe(name)}</div>
+        ${en?`<div class="fullName">${safe(en)}</div>`:""}
+        ${designation?`<span class="badge">${safe(designation)}</span>`:""}
+      </div>
+    </div>
+    <div class="infoList">${info}</div>
+    <button class="action" style="width:100%;margin-top:10px;background:rgba(0,122,255,.09);color:var(--blue)" onclick="openProfile(${index})"> View Full Profile</button><div class="actions">
+      <button class="action call" ${mobile?`onclick="callPerson('${attr(mobile)}')"`:"disabled"}>📞 Call</button>
+      <button class="action email" ${email?`onclick="emailPerson('${attr(email)}')"`:"disabled"}>✉️ Email</button>
+      <button class="action copy" onclick="copyPerson(${index})">📋 Copy</button>
+      <button class="action share" onclick="sharePerson(${index})">↗️ Share</button>
+    </div>
+  </article>`;
+}
+
+function filterEmployees(){
+  const q=($("filter")?.value||"").toLowerCase().trim();
+  const list=employees.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
+  renderEmployees(list);
+}
+
+function sortEmployees(){
+  employees.sort((a,b)=>{
+    const A=String(pick(a,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
+    const B=String(pick(b,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
+    return A.localeCompare(B,"bn");
+  });
+  renderEmployees(employees);
+  showToast("↕️ নাম অনুযায়ী সাজানো হয়েছে");
+}
+
+async function copyPerson(index){
+  const p=employees[index]; if(!p) return;
+  let text="";
+  Object.entries(p).forEach(([k,v])=>{
+    if(v!==null&&v!==undefined) text+=`${k}: ${typeof v==="object"?JSON.stringify(v):v}\n`;
+  });
+  try{await navigator.clipboard.writeText(text);showToast("✅ সম্পূর্ণ তথ্য কপি হয়েছে");}
+  catch{showToast("❌ কপি করা যায়নি");}
+}
+
+function callPerson(n){window.location.href="tel:"+String(n).replace(/[^\d+]/g,"")}
+function emailPerson(e){window.location.href="mailto:"+e}
+
+async function sharePerson(index){
+  const p=employees[index]; if(!p) return;
+  const name=pick(p,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher";
+  let text=`${name}\nTeacher Info by MH RAFI\n`;
+  Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!==undefined&&k!=="ছবি")text+=`${k}: ${typeof v==="object"?JSON.stringify(v):v}\n`});
+  if(navigator.share){try{await navigator.share({title:name,text})}catch{}}
+  else {try{await navigator.clipboard.writeText(text);showToast("📋 Share API নেই — তথ্য কপি হয়েছে")}catch{}}
+}
+
+function openViewer(url){
+  $("fullImage").src=url;
+  $("viewer").classList.add("show");
+  document.body.style.overflow="hidden";
+}
+function closeViewer(e){
+  if(e && e.target===$("fullImage")) return;
+  $("viewer").classList.remove("show");
+  $("fullImage").src="";
+  document.body.style.overflow="";
+}
+
+function openSheet(){$("sheetBack").classList.add("show")}
+function closeSheet(e){if(!e||e.target===$("sheetBack"))$("sheetBack").classList.remove("show")}
+
+function toggleTheme(){
+  document.documentElement.classList.toggle("dark");
+  const dark=document.documentElement.classList.contains("dark");
+  localStorage.setItem("teacher_theme",dark?"dark":"light");
+  $("themeBtn").textContent=dark?"🌙":"☀️";
+  $("darkSwitch").classList.toggle("on",dark);
+}
+function initTheme(){
+  const dark=localStorage.getItem("teacher_theme")==="dark";
+  document.documentElement.classList.toggle("dark",dark);
+  $("themeBtn").textContent=dark?"🌙":"☀️";
+  $("darkSwitch").classList.toggle("on",dark);
+}
+
+function saveRecent(eiin){
+  let a=JSON.parse(localStorage.getItem("teacher_recent")||"[]");
+  a=[eiin,...a.filter(x=>x!==eiin)].slice(0,5);
+  localStorage.setItem("teacher_recent",JSON.stringify(a));
+  renderRecent();
+}
+function renderRecent(){
+  const box=$("recent"), a=JSON.parse(localStorage.getItem("teacher_recent")||"[]");
+  box.innerHTML=a.length?`<span style="font-size:10px;color:var(--muted)">Recent:</span>`+a.map(x=>`<button onclick="loadInstitute('${safe(x)}')">${safe(x)}</button>`).join(""):"";
+}
+function clearRecent(){localStorage.removeItem("teacher_recent");renderRecent();showToast("🗑️ Recent searches মুছে গেছে")}
+
+$("eiin").addEventListener("keydown",e=>{if(e.key==="Enter")loadInstitute()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeViewer();closeSheet()}});
+
+initTheme();
+renderRecent();
+
+/* Premium Teacher Profile */
+let activeProfileIndex=-1;
+function personName(p){return pick(p,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher"}
+function personPhoto(p){return pick(p,["ছবি","photo","image","photo_url","Photo","Image"])}
+function personDesignation(p){return pick(p,["DesignationNameBn","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"])||"Designation not available"}
+function personMobile(p){return pick(p,["মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"])}
+function personEmail(p){return pick(p,["ইমেইল","email"])}
+function favKey(p){return "teacher_fav_"+String(pick(p,["EmpId","আইডি","ID","id"])||personName(p))}
+function isFav(p){return localStorage.getItem(favKey(p))==="1"}
+function toggleFav(i){
+  const p=employees[i];if(!p)return;
+  const k=favKey(p);
+  if(isFav(p)){localStorage.removeItem(k);showToast("☆ Favorite থেকে সরানো হয়েছে")}
+  else{localStorage.setItem(k,"1");showToast("★ Favorite-এ যোগ হয়েছে")}
+  if(activeProfileIndex===i) updateFavButton();
+  renderEmployees(employees.filter(p=>JSON.stringify(p).toLowerCase().includes((($("filter")||{}).value||"").toLowerCase().trim())));
+}
+function updateFavButton(){
+  const b=$("profileFavBtn"),p=employees[activeProfileIndex];
+  if(b&&p)b.textContent=isFav(p)?"★":"☆";
+}
+function toggleProfileFavorite(){if(activeProfileIndex>=0)toggleFav(activeProfileIndex)}
+function openProfile(i){
+  const p=employees[i];if(!p)return;activeProfileIndex=i;
+  const photo=personPhoto(p),name=personName(p),des=personDesignation(p),mobile=personMobile(p),email=personEmail(p);
+  let rows="";
+  Object.entries(p).forEach(([k,v])=>{
+    if(v===null||v===undefined||v==="")return;
+    if(["ছবি","photo","image","photo_url","Photo","Image"].includes(k))return;
+    rows+=`<div class="infoRow"><div class="infoIcon">${iconFor(k)}</div><div><span class="infoKey">${safe(k)}</span><span class="infoValue">${safe(typeof v==="object"?JSON.stringify(v):v)}</span></div></div>`;
+  });
+  const img=photo?`<img class="profilePhoto" src="${attr(photo)}" alt="Teacher Photo" onclick="openViewer('${attr(photo)}')">`:`<div class="profilePhotoPlaceholder">👤</div>`;
+  $("profileContent").innerHTML=`<section class="profileHero">${img}<h2>${safe(name)}</h2><p>${safe(des)}</p><div class="profileActions">${mobile?`<button class="profileAction" onclick="callPerson('${attr(mobile)}')">📞 Call</button>`:""}${email?`<button class="profileAction" onclick="emailPerson('${attr(email)}')">✉️ Email</button>`:""}<button class="profileAction" onclick="copyPerson(${i})">📋 Copy</button><button class="profileAction" onclick="sharePerson(${i})">↗️ Share</button></div></section><section class="profileInfo"><div style="font-size:15px;font-weight:800;margin-bottom:12px">Official Information</div>${rows||'<div class="emptyHint">অতিরিক্ত তথ্য নেই।</div>'}</section>`;
+  $("profileBack").classList.add("show");document.body.style.overflow="hidden";updateFavButton();
+}
+function closeProfile(){ $("profileBack").classList.remove("show");document.body.style.overflow="";activeProfileIndex=-1 }
+
+</script>
+</body>
+</html>
