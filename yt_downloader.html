@@ -1,0 +1,3006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+
+<meta name="theme-color" content="#06070b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>YouTube Downloader — By MH RAFI</title>
+
+<style>
+
+/* =========================================================
+   IOS 27 LIQUID GLASS — CORE
+========================================================= */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+}
+
+:root{
+    --bg:#06070b;
+    --text:#fff;
+    --muted:rgba(255,255,255,.55);
+    --glass:rgba(255,255,255,.075);
+    --glass2:rgba(255,255,255,.11);
+    --border:rgba(255,255,255,.14);
+    --shadow:rgba(0,0,0,.42);
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    min-height:100vh;
+    overflow-x:hidden;
+
+    color:var(--text);
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Display",
+        "SF Pro Text",
+        Inter,
+        Arial,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at 8% 0%,
+            rgba(255,55,105,.22),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 95% 8%,
+            rgba(70,100,255,.24),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 50% 110%,
+            rgba(170,80,255,.19),
+            transparent 42%
+        ),
+        var(--bg);
+}
+
+/* =========================================================
+   AURORA
+========================================================= */
+
+.aurora{
+    position:fixed;
+    z-index:-5;
+
+    width:650px;
+    height:650px;
+
+    left:50%;
+    top:45%;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    pointer-events:none;
+
+    filter:blur(100px);
+    opacity:.30;
+
+    background:
+        radial-gradient(
+            circle at 25% 30%,
+            rgba(255,50,100,.9),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 75% 35%,
+            rgba(70,100,255,.9),
+            transparent 32%
+        ),
+        radial-gradient(
+            circle at 50% 80%,
+            rgba(170,70,255,.9),
+            transparent 34%
+        );
+
+    animation:
+        aurora 16s ease-in-out infinite alternate;
+}
+
+@keyframes aurora{
+
+    0%{
+        transform:
+            translate(-50%,-50%)
+            scale(.9)
+            rotate(0deg);
+    }
+
+    100%{
+        transform:
+            translate(-44%,-55%)
+            scale(1.2)
+            rotate(15deg);
+    }
+}
+
+/* =========================================================
+   NOISE
+========================================================= */
+
+.noise{
+    position:fixed;
+    inset:0;
+
+    z-index:-4;
+
+    pointer-events:none;
+
+    opacity:.035;
+
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =========================================================
+   GLASS SHINE
+========================================================= */
+
+.glass-shine{
+    position:absolute;
+
+    width:230px;
+    height:80px;
+
+    top:-45px;
+    left:-240px;
+
+    pointer-events:none;
+
+    background:
+        linear-gradient(
+            110deg,
+            transparent,
+            rgba(255,255,255,.16),
+            transparent
+        );
+
+    transform:rotate(-18deg);
+
+    animation:
+        glassSweep 8s ease-in-out infinite;
+}
+
+@keyframes glassSweep{
+
+    0%,55%{
+        left:-260px;
+        opacity:0;
+    }
+
+    65%{
+        opacity:1;
+    }
+
+    100%{
+        left:120%;
+        opacity:0;
+    }
+}
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.nav{
+    position:relative;
+
+    width:min(
+        960px,
+        calc(100% - 20px)
+    );
+
+    margin:12px auto;
+
+    padding:10px 12px 10px 14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    border:1px solid var(--border);
+    border-radius:27px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.12),
+            rgba(255,255,255,.04)
+        );
+
+    backdrop-filter:
+        blur(35px)
+        saturate(180%);
+
+    -webkit-backdrop-filter:
+        blur(35px)
+        saturate(180%);
+
+    box-shadow:
+        0 25px 80px rgba(0,0,0,.34),
+        inset 0 1px rgba(255,255,255,.20);
+
+    overflow:hidden;
+
+    animation:
+        navIn .7s cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes navIn{
+
+    from{
+        opacity:0;
+        transform:
+            translateY(-18px)
+            scale(.97);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.20),
+            rgba(255,255,255,.05)
+        );
+
+    border:1px solid rgba(255,255,255,.18);
+
+    box-shadow:
+        inset 0 1px rgba(255,255,255,.2),
+        0 8px 25px rgba(0,0,0,.25);
+
+    font-size:17px;
+
+    animation:
+        logoFloat 4s ease-in-out infinite;
+}
+
+@keyframes logoFloat{
+
+    50%{
+        transform:
+            translateY(-2px)
+            rotate(-2deg);
+    }
+
+}
+
+.brand-copy{
+    line-height:1;
+}
+
+.brand-name{
+    font-size:14px;
+    font-weight:900;
+    letter-spacing:-.3px;
+}
+
+.brand-by{
+    margin-top:5px;
+
+    color:rgba(255,255,255,.43);
+
+    font-size:8px;
+    letter-spacing:1px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    color:rgba(255,255,255,.48);
+
+    font-size:9px;
+}
+
+.status-dot{
+    width:7px;
+    height:7px;
+
+    border-radius:50%;
+
+    background:#5cff9b;
+
+    box-shadow:
+        0 0 5px #5cff9b,
+        0 0 16px #5cff9b;
+
+    animation:
+        pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse{
+
+    50%{
+        transform:scale(1.35);
+        opacity:.55;
+    }
+
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.container{
+    width:min(
+        730px,
+        calc(100% - 20px)
+    );
+
+    margin:
+        58px auto 70px;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero{
+    text-align:center;
+
+    margin-bottom:31px;
+
+    animation:
+        heroIn .9s cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes heroIn{
+
+    from{
+        opacity:0;
+        transform:
+            translateY(24px)
+            scale(.96);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+}
+
+.badge{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+
+    padding:8px 13px;
+
+    border:1px solid var(--border);
+    border-radius:999px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    backdrop-filter:blur(20px);
+
+    color:rgba(255,255,255,.62);
+
+    font-size:8px;
+    font-weight:800;
+
+    letter-spacing:1.3px;
+
+    box-shadow:
+        inset 0 1px rgba(255,255,255,.10);
+}
+
+/* =========================================================
+   PREMIUM BRANDING
+========================================================= */
+
+.hero h1{
+    margin-top:19px;
+
+    line-height:.88;
+
+    letter-spacing:-5px;
+
+    font-weight:950;
+}
+
+/*
+    MAIN GLOW
+*/
+
+.hero-title{
+    position:relative;
+
+    display:inline-block;
+
+    font-size:
+        clamp(
+            40px,
+            10vw,
+            72px
+        );
+
+    background:
+        linear-gradient(
+            100deg,
+            #ffffff 0%,
+            #dce2ff 35%,
+            #ffffff 52%,
+            #bfc8ff 75%,
+            #ffffff 100%
+        );
+
+    background-size:250% auto;
+
+    -webkit-background-clip:text;
+    background-clip:text;
+
+    color:transparent;
+
+    animation:
+        titleShine 5s linear infinite,
+        titleFloat 4s ease-in-out infinite;
+}
+
+.hero-title::after{
+    content:"";
+
+    position:absolute;
+
+    inset:15% 5% -15%;
+
+    z-index:-1;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(100,120,255,.32),
+            rgba(255,255,255,.22),
+            rgba(170,90,255,.32)
+        );
+
+    filter:blur(28px);
+
+    opacity:.8;
+
+    animation:
+        titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleShine{
+
+    to{
+        background-position:
+            250% center;
+    }
+
+}
+
+@keyframes titleFloat{
+
+    50%{
+        transform:
+            translateY(-2px);
+    }
+
+}
+
+@keyframes titleGlow{
+
+    from{
+        opacity:.4;
+        transform:scale(.97);
+    }
+
+    to{
+        opacity:.9;
+        transform:scale(1.02);
+    }
+
+}
+
+.signature{
+    display:block;
+
+    margin-top:13px;
+
+    font-size:
+        clamp(
+            14px,
+            4vw,
+            20px
+        );
+
+    letter-spacing:5px;
+
+    font-weight:800;
+
+    background:
+        linear-gradient(
+            100deg,
+            #818dff,
+            #ffffff,
+            #b487ff,
+            #818dff
+        );
+
+    background-size:250%;
+
+    -webkit-background-clip:text;
+    background-clip:text;
+
+    color:transparent;
+
+    animation:
+        signatureShine 5s linear infinite;
+}
+
+@keyframes signatureShine{
+
+    to{
+        background-position:250%;
+    }
+
+}
+
+.hero p{
+    max-width:500px;
+
+    margin:20px auto 0;
+
+    color:var(--muted);
+
+    font-size:12px;
+    line-height:1.7;
+}
+
+/* =========================================================
+   MAIN LIQUID GLASS CARD
+========================================================= */
+
+.card{
+    position:relative;
+
+    padding:12px;
+
+    border:1px solid var(--border);
+    border-radius:32px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.125),
+            rgba(255,255,255,.035)
+        );
+
+    backdrop-filter:
+        blur(42px)
+        saturate(180%);
+
+    -webkit-backdrop-filter:
+        blur(42px)
+        saturate(180%);
+
+    box-shadow:
+        0 45px 130px rgba(0,0,0,.45),
+        inset 0 1px rgba(255,255,255,.18);
+
+    overflow:hidden;
+
+    animation:
+        cardIn .9s cubic-bezier(.2,.8,.2,1) .08s both;
+}
+
+@keyframes cardIn{
+
+    from{
+        opacity:0;
+        transform:
+            translateY(30px)
+            scale(.96);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.input-box{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    padding:7px;
+
+    border-radius:23px;
+
+    background:
+        rgba(0,0,0,.20);
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    box-shadow:
+        inset 0 1px rgba(255,255,255,.06);
+}
+
+.input-icon{
+    width:43px;
+    height:43px;
+
+    flex:none;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:15px;
+
+    background:
+        rgba(255,255,255,.085);
+
+    font-size:16px;
+
+    transition:
+        transform .3s cubic-bezier(.2,.9,.2,1);
+}
+
+.input-box:focus-within .input-icon{
+    transform:
+        scale(1.08)
+        rotate(-4deg);
+}
+
+input{
+    flex:1;
+    min-width:70px;
+
+    height:43px;
+
+    border:0;
+    outline:0;
+
+    background:transparent;
+
+    color:#fff;
+
+    font-family:inherit;
+    font-size:13px;
+}
+
+input::placeholder{
+    color:rgba(255,255,255,.32);
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button{
+    font-family:inherit;
+}
+
+.get-btn,
+.paste-input-btn{
+    height:43px;
+
+    flex:none;
+
+    border-radius:15px;
+
+    cursor:pointer;
+
+    transition:
+        transform .25s cubic-bezier(.2,.9,.2,1),
+        box-shadow .25s ease,
+        background .25s ease;
+}
+
+.get-btn{
+    padding:0 17px;
+
+    border:0;
+
+    background:#fff;
+
+    color:#101010;
+
+    font-size:11px;
+    font-weight:900;
+
+    box-shadow:
+        0 8px 25px rgba(255,255,255,.07);
+}
+
+.get-btn:hover{
+    box-shadow:
+        0 12px 35px rgba(255,255,255,.16);
+}
+
+.get-btn:active{
+    transform:scale(.91);
+}
+
+.get-btn:disabled{
+    opacity:.5;
+    pointer-events:none;
+}
+
+.paste-input-btn{
+    padding:0 12px;
+
+    border:1px solid rgba(255,255,255,.13);
+
+    background:
+        rgba(255,255,255,.075);
+
+    color:rgba(255,255,255,.9);
+
+    font-size:10px;
+    font-weight:850;
+
+    backdrop-filter:blur(20px);
+}
+
+.paste-input-btn:hover{
+    background:
+        rgba(255,255,255,.13);
+}
+
+.paste-input-btn:active{
+    transform:
+        scale(.91);
+}
+
+/* =========================================================
+   CLIPBOARD PROMPT
+========================================================= */
+
+.clipboard{
+    position:relative;
+
+    display:none;
+    align-items:center;
+    gap:10px;
+
+    margin-top:9px;
+
+    padding:11px;
+
+    border-radius:20px;
+
+    background:
+        rgba(255,255,255,.07);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    overflow:hidden;
+
+    animation:
+        sheetIn .45s cubic-bezier(.2,.9,.2,1);
+}
+
+@keyframes sheetIn{
+
+    from{
+        opacity:0;
+        transform:
+            translateY(12px)
+            scale(.96);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+
+}
+
+.clip-icon{
+    width:38px;
+    height:38px;
+
+    flex:none;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:13px;
+
+    background:
+        rgba(255,255,255,.09);
+}
+
+.clip-copy{
+    flex:1;
+    min-width:0;
+}
+
+.clip-title{
+    font-size:10px;
+    font-weight:850;
+}
+
+.clip-sub{
+    margin-top:3px;
+
+    color:rgba(255,255,255,.40);
+
+    font-size:8px;
+}
+
+.paste-btn{
+    padding:9px 12px;
+
+    border:0;
+    border-radius:12px;
+
+    background:#fff;
+    color:#111;
+
+    font-size:9px;
+    font-weight:900;
+
+    cursor:pointer;
+
+    transition:
+        transform .22s cubic-bezier(.2,.9,.2,1);
+}
+
+.paste-btn:active{
+    transform:scale(.9);
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.error{
+    display:none;
+
+    margin-top:9px;
+
+    padding:12px 14px;
+
+    border-radius:17px;
+
+    color:#ffc1c9;
+
+    background:
+        rgba(255,55,85,.10);
+
+    border:
+        1px solid rgba(255,80,100,.17);
+
+    font-size:10px;
+    line-height:1.5;
+
+    animation:
+        shake .35s ease;
+}
+
+@keyframes shake{
+
+    25%{
+        transform:translateX(-4px);
+    }
+
+    75%{
+        transform:translateX(4px);
+    }
+
+}
+
+/* =========================================================
+   SKELETON
+========================================================= */
+
+.skeleton{
+    display:none;
+
+    margin-top:12px;
+}
+
+.skeleton-item{
+    position:relative;
+
+    overflow:hidden;
+
+    border-radius:23px;
+
+    background:
+        rgba(255,255,255,.065);
+}
+
+.skeleton-item::after{
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.12),
+            transparent
+        );
+
+    transform:translateX(-100%);
+
+    animation:
+        skeleton 1.35s infinite;
+}
+
+@keyframes skeleton{
+
+    to{
+        transform:translateX(100%);
+    }
+
+}
+
+.skeleton-thumb{
+    aspect-ratio:16/9;
+}
+
+.skeleton-line{
+    height:16px;
+
+    margin-top:12px;
+}
+
+.skeleton-short{
+    width:62%;
+}
+
+/* =========================================================
+   RESULT
+========================================================= */
+
+.result{
+    display:none;
+
+    margin-top:12px;
+
+    animation:
+        resultIn .55s cubic-bezier(.2,.9,.2,1);
+}
+
+@keyframes resultIn{
+
+    from{
+        opacity:0;
+        transform:
+            translateY(18px)
+            scale(.98);
+    }
+
+    to{
+        opacity:1;
+        transform:none;
+    }
+
+}
+
+.thumb{
+    position:relative;
+
+    aspect-ratio:16/9;
+
+    overflow:hidden;
+
+    border-radius:25px;
+
+    background:#111;
+
+    box-shadow:
+        0 20px 55px rgba(0,0,0,.28);
+}
+
+.thumb img{
+    width:100%;
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+    transition:
+        transform .8s cubic-bezier(.2,.8,.2,1);
+}
+
+.thumb:hover img{
+    transform:scale(1.025);
+}
+
+.thumb::after{
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.58),
+            transparent 60%
+        );
+}
+
+.play{
+    position:absolute;
+
+    z-index:2;
+
+    left:50%;
+    top:50%;
+
+    width:60px;
+    height:60px;
+
+    display:grid;
+    place-items:center;
+
+    transform:
+        translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:
+        rgba(0,0,0,.40);
+
+    border:
+        1px solid rgba(255,255,255,.28);
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.32);
+
+    font-size:19px;
+
+    animation:
+        playPulse 3s ease-in-out infinite;
+}
+
+@keyframes playPulse{
+
+    50%{
+        box-shadow:
+            0 12px 40px rgba(130,140,255,.22);
+    }
+
+}
+
+.video-title{
+    margin:
+        14px 3px 17px;
+
+    font-size:16px;
+    font-weight:800;
+
+    line-height:1.4;
+
+    letter-spacing:-.25px;
+}
+
+/* =========================================================
+   FORMAT LABEL
+========================================================= */
+
+.label{
+    margin:0 3px 9px;
+
+    color:rgba(255,255,255,.36);
+
+    font-size:8px;
+    font-weight:800;
+
+    letter-spacing:1.2px;
+
+    text-transform:uppercase;
+}
+
+/* =========================================================
+   FORMAT CARDS
+========================================================= */
+
+.formats{
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:9px;
+}
+
+.format{
+    position:relative;
+
+    min-height:114px;
+
+    padding:15px;
+
+    overflow:hidden;
+
+    text-align:left;
+
+    border:
+        1px solid rgba(255,255,255,.13);
+
+    border-radius:23px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.11),
+            rgba(255,255,255,.04)
+        );
+
+    color:#fff;
+
+    cursor:pointer;
+
+    transition:
+        transform .3s cubic-bezier(.2,.9,.2,1),
+        box-shadow .3s ease,
+        border-color .3s ease;
+}
+
+.format:hover{
+    transform:
+        translateY(-4px)
+        scale(1.01);
+
+    border-color:
+        rgba(255,255,255,.24);
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,.22);
+}
+
+.format:active{
+    transform:
+        scale(.94);
+}
+
+.format:disabled{
+    opacity:.45;
+    pointer-events:none;
+}
+
+.format-icon{
+    position:relative;
+
+    width:41px;
+    height:41px;
+
+    display:grid;
+    place-items:center;
+
+    margin-bottom:11px;
+
+    border-radius:14px;
+
+    background:
+        rgba(255,255,255,.09);
+
+    font-size:17px;
+
+    transition:
+        transform .35s cubic-bezier(.2,.9,.2,1);
+}
+
+.format:hover .format-icon{
+    transform:
+        scale(1.08)
+        rotate(-4deg);
+}
+
+.format strong{
+    position:relative;
+
+    display:block;
+
+    font-size:13px;
+}
+
+.format small{
+    position:relative;
+
+    display:block;
+
+    margin-top:4px;
+
+    color:rgba(255,255,255,.40);
+
+    font-size:9px;
+}
+
+.arrow{
+    position:absolute;
+
+    right:13px;
+    bottom:13px;
+
+    color:rgba(255,255,255,.42);
+
+    font-size:15px;
+}
+
+/* =========================================================
+   DOWNLOAD PROGRESS
+========================================================= */
+
+.progress{
+    display:none;
+
+    margin-top:11px;
+
+    padding:15px;
+
+    border-radius:21px;
+
+    background:
+        rgba(0,0,0,.20);
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    animation:
+        sheetIn .45s cubic-bezier(.2,.9,.2,1);
+}
+
+.progress-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:9px;
+}
+
+.progress-status{
+    color:rgba(255,255,255,.65);
+
+    font-size:9px;
+    font-weight:750;
+}
+
+.progress-percent{
+    font-size:10px;
+    font-weight:850;
+}
+
+.track{
+    height:7px;
+
+    overflow:hidden;
+
+    border-radius:999px;
+
+    background:
+        rgba(255,255,255,.07);
+}
+
+.bar{
+    width:0%;
+    height:100%;
+
+    border-radius:999px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #fff,
+            #9da8ff,
+            #fff
+        );
+
+    background-size:200%;
+
+    animation:
+        progressGlow 2s linear infinite;
+
+    transition:
+        width .18s ease;
+}
+
+@keyframes progressGlow{
+
+    to{
+        background-position:200%;
+    }
+
+}
+
+.progress-stats{
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:7px;
+
+    margin-top:10px;
+}
+
+.stat{
+    padding:9px;
+
+    border-radius:13px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    text-align:center;
+}
+
+.stat span{
+    display:block;
+
+    color:rgba(255,255,255,.32);
+
+    font-size:7px;
+
+    text-transform:uppercase;
+    letter-spacing:.6px;
+}
+
+.stat strong{
+    display:block;
+
+    margin-top:4px;
+
+    font-size:9px;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer{
+    margin-top:21px;
+
+    text-align:center;
+
+    color:rgba(255,255,255,.22);
+
+    font-size:8px;
+
+    letter-spacing:.5px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:600px){
+
+    .container{
+        margin-top:42px;
+    }
+
+    .hero-title{
+        letter-spacing:-3.5px;
+    }
+
+    .input-box{
+        flex-wrap:wrap;
+    }
+
+    input{
+        flex:1;
+    }
+
+    .get-btn{
+        width:100%;
+    }
+
+    .paste-input-btn{
+        padding:0 11px;
+    }
+
+}
+
+@media(max-width:390px){
+
+    .formats{
+        grid-template-columns:1fr;
+    }
+
+    .progress-stats{
+        grid-template-columns:1fr;
+    }
+
+    .hero-title{
+        font-size:40px;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="aurora"></div>
+<div class="noise"></div>
+
+
+<!-- ========================================================
+     NAV
+========================================================= -->
+
+<header class="nav">
+
+    <div class="glass-shine"></div>
+
+    <div class="brand">
+
+        <div class="logo">
+            ▶
+        </div>
+
+        <div class="brand-copy">
+
+            <div class="brand-name">
+                YouTube Downloader
+            </div>
+
+            <div class="brand-by">
+                By MH RAFI
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="status">
+
+        <span class="status-dot"></span>
+
+        Ready
+
+    </div>
+
+</header>
+
+
+<!-- ========================================================
+     MAIN
+========================================================= -->
+
+<main class="container">
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="badge">
+            ✦ LIQUID GLASS EXPERIENCE
+        </div>
+
+
+        <h1>
+
+            <span class="hero-title">
+                YouTube Downloader
+            </span>
+
+            <span class="signature">
+                BY MH RAFI
+            </span>
+
+        </h1>
+
+
+        <p>
+            Paste a YouTube link and experience
+            a smooth, fast and beautiful download
+            experience.
+        </p>
+
+    </section>
+
+
+    <!-- ====================================================
+         MAIN CARD
+    ===================================================== -->
+
+    <section class="card">
+
+        <div class="glass-shine"></div>
+
+
+        <!-- INPUT -->
+
+        <div class="input-box">
+
+            <div class="input-icon">
+                🔗
+            </div>
+
+
+            <input
+                id="urlInput"
+                type="url"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Paste YouTube URL..."
+            >
+
+
+            <button
+                id="pasteInputBtn"
+                class="paste-input-btn"
+                type="button"
+            >
+                📋 Paste
+            </button>
+
+
+            <button
+                id="getBtn"
+                class="get-btn"
+                type="button"
+            >
+                Get Video
+            </button>
+
+        </div>
+
+
+        <!-- CLIPBOARD DETECTION -->
+
+        <div
+            id="clipboardPrompt"
+            class="clipboard"
+        >
+
+            <div class="glass-shine"></div>
+
+            <div class="clip-icon">
+                📋
+            </div>
+
+            <div class="clip-copy">
+
+                <div class="clip-title">
+                    YouTube link detected
+                </div>
+
+                <div class="clip-sub">
+                    Use the copied link
+                </div>
+
+            </div>
+
+            <button
+                id="pasteBtn"
+                class="paste-btn"
+                type="button"
+            >
+                Paste
+            </button>
+
+        </div>
+
+
+        <!-- ERROR -->
+
+        <div
+            id="error"
+            class="error">
+        </div>
+
+
+        <!-- SKELETON -->
+
+        <div
+            id="skeleton"
+            class="skeleton">
+
+            <div
+                class="skeleton-item skeleton-thumb">
+            </div>
+
+            <div
+                class="skeleton-item skeleton-line">
+            </div>
+
+            <div
+                class="skeleton-item skeleton-line skeleton-short">
+            </div>
+
+        </div>
+
+
+        <!-- RESULT -->
+
+        <div
+            id="result"
+            class="result">
+
+
+            <!-- THUMBNAIL -->
+
+            <div class="thumb">
+
+                <img
+                    id="thumbnail"
+                    alt="YouTube thumbnail"
+                >
+
+                <div class="play">
+                    ▶
+                </div>
+
+            </div>
+
+
+            <!-- TITLE -->
+
+            <div
+                id="videoTitle"
+                class="video-title">
+            </div>
+
+
+            <div class="label">
+                Choose download format
+            </div>
+
+
+            <!-- FORMATS -->
+
+            <div class="formats">
+
+
+                <!-- MP4 -->
+
+                <button
+                    id="mp4Btn"
+                    class="format"
+                    type="button"
+                >
+
+                    <div class="glass-shine"></div>
+
+                    <div class="format-icon">
+                        🎬
+                    </div>
+
+                    <strong>
+                        MP4 Video
+                    </strong>
+
+                    <small>
+                        Direct video download
+                    </small>
+
+                    <span class="arrow">
+                        ↓
+                    </span>
+
+                </button>
+
+
+                <!-- MP3 -->
+
+                <button
+                    id="mp3Btn"
+                    class="format"
+                    type="button"
+                >
+
+                    <div class="glass-shine"></div>
+
+                    <div class="format-icon">
+                        🎵
+                    </div>
+
+                    <strong>
+                        MP3 Audio
+                    </strong>
+
+                    <small>
+                        Direct audio download
+                    </small>
+
+                    <span class="arrow">
+                        ↓
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <!-- PROGRESS -->
+
+            <div
+                id="progress"
+                class="progress">
+
+
+                <div class="progress-head">
+
+                    <span
+                        id="progressStatus"
+                        class="progress-status">
+                        Preparing...
+                    </span>
+
+                    <span
+                        id="progressPercent"
+                        class="progress-percent">
+                        —
+                    </span>
+
+                </div>
+
+
+                <div class="track">
+
+                    <div
+                        id="bar"
+                        class="bar">
+                    </div>
+
+                </div>
+
+
+                <div class="progress-stats">
+
+
+                    <div class="stat">
+
+                        <span>
+                            Downloaded
+                        </span>
+
+                        <strong id="downloaded">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <span>
+                            Speed
+                        </span>
+
+                        <strong id="speed">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="stat">
+
+                        <span>
+                            Remaining
+                        </span>
+
+                        <strong id="remaining">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+    <div class="footer">
+        YouTube Downloader • By MH RAFI
+    </div>
+
+</main>
+
+
+<script>
+
+/* =========================================================
+   API
+========================================================= */
+
+const API =
+    "https://api.lmnx9.shop/download/youtube.php?url=";
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentVideo = null;
+
+let downloading = false;
+
+
+/* =========================================================
+   SELECTOR
+========================================================= */
+
+const $ =
+    id =>
+        document.getElementById(id);
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function wait(ms){
+
+    return new Promise(
+        resolve =>
+            setTimeout(resolve,ms)
+    );
+
+}
+
+
+function clearError(){
+
+    $("error").style.display =
+        "none";
+
+}
+
+
+function showError(message){
+
+    $("error").textContent =
+        message;
+
+    $("error").style.display =
+        "block";
+
+}
+
+
+/* =========================================================
+   YOUTUBE VALIDATION
+========================================================= */
+
+function isYouTubeUrl(url){
+
+    try{
+
+        const u =
+            new URL(url);
+
+        const host =
+            u.hostname
+            .toLowerCase()
+            .replace(/^www\./,"");
+
+        return (
+            host === "youtube.com" ||
+            host === "youtu.be" ||
+            host.endsWith(".youtube.com")
+        );
+
+    }
+    catch{
+
+        return false;
+
+    }
+
+}
+
+
+/* =========================================================
+   PASTE BUTTON
+========================================================= */
+
+$("pasteInputBtn")
+.addEventListener(
+    "click",
+    async () => {
+
+        clearError();
+
+        try{
+
+            if(
+                !navigator.clipboard ||
+                !navigator.clipboard.readText
+            ){
+
+                throw new Error(
+                    "Clipboard unavailable"
+                );
+
+            }
+
+
+            const text =
+                (
+                    await navigator
+                    .clipboard
+                    .readText()
+                ).trim();
+
+
+            if(!text){
+
+                showError(
+                    "Clipboard is empty."
+                );
+
+                return;
+
+            }
+
+
+            $("urlInput").value =
+                text;
+
+
+            $("urlInput").focus();
+
+
+            if(
+                isYouTubeUrl(text)
+            ){
+
+                /*
+                 * Smoothly start fetching
+                 */
+
+                await getVideo();
+
+            }
+            else{
+
+                showError(
+                    "The copied text is not a valid YouTube URL."
+                );
+
+            }
+
+        }
+        catch(error){
+
+            console.error(error);
+
+            showError(
+                "Clipboard permission is unavailable. Please paste the link manually."
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CLIPBOARD PROMPT
+========================================================= */
+
+async function detectClipboard(){
+
+    if(
+        !navigator.clipboard ||
+        !navigator.clipboard.readText
+    ){
+        return;
+    }
+
+    try{
+
+        const text =
+            (
+                await navigator
+                .clipboard
+                .readText()
+            ).trim();
+
+
+        if(
+            text &&
+            isYouTubeUrl(text) &&
+            $("urlInput").value.trim() !== text
+        ){
+
+            $("clipboardPrompt")
+                .dataset.url =
+                text;
+
+            $("clipboardPrompt")
+                .style.display =
+                "flex";
+
+        }
+
+    }
+    catch{
+
+        /* Clipboard permission denied */
+
+    }
+
+}
+
+
+$("pasteBtn")
+.addEventListener(
+    "click",
+    async () => {
+
+        let text =
+            $("clipboardPrompt")
+            .dataset.url;
+
+
+        try{
+
+            if(!text){
+
+                text =
+                    (
+                        await navigator
+                        .clipboard
+                        .readText()
+                    ).trim();
+
+            }
+
+        }
+        catch{
+
+            /* ignore */
+
+        }
+
+
+        if(
+            text &&
+            isYouTubeUrl(text)
+        ){
+
+            $("urlInput").value =
+                text;
+
+            $("clipboardPrompt")
+                .style.display =
+                "none";
+
+            await getVideo();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        setTimeout(
+            detectClipboard,
+            700
+        );
+
+    }
+);
+
+
+/* =========================================================
+   GET VIDEO
+========================================================= */
+
+async function getVideo(){
+
+    clearError();
+
+
+    const url =
+        $("urlInput")
+        .value
+        .trim();
+
+
+    if(!url){
+
+        showError(
+            "Please paste a YouTube URL first."
+        );
+
+        return;
+
+    }
+
+
+    if(!isYouTubeUrl(url)){
+
+        showError(
+            "Please enter a valid YouTube URL."
+        );
+
+        return;
+
+    }
+
+
+    $("getBtn").disabled =
+        true;
+
+    $("getBtn").textContent =
+        "Loading...";
+
+
+    $("result").style.display =
+        "none";
+
+
+    $("skeleton").style.display =
+        "block";
+
+
+    try{
+
+        const response =
+            await fetch(
+                API +
+                encodeURIComponent(url),
+                {
+                    method:"GET",
+                    cache:"no-store",
+                    headers:{
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "API error " +
+                response.status
+            );
+
+        }
+
+
+        const json =
+            await response.json();
+
+
+        if(
+            json.success !== true ||
+            !json.data
+        ){
+
+            throw new Error(
+                "Invalid response"
+            );
+
+        }
+
+
+        currentVideo = {
+
+            title:
+                json.data.video_title ||
+                "YouTube Video",
+
+            thumbnail:
+                json.data.video_thumbnail ||
+                "",
+
+            mp4:
+                json.data.video_mp4 ||
+                "",
+
+            mp3:
+                json.data.audio_mp3 ||
+                ""
+
+        };
+
+
+        $("videoTitle")
+            .textContent =
+            currentVideo.title;
+
+
+        $("thumbnail").src =
+            currentVideo.thumbnail;
+
+
+        $("skeleton").style.display =
+            "none";
+
+
+        $("result").style.display =
+            "block";
+
+
+        setTimeout(
+            () => {
+
+                $("result")
+                    .scrollIntoView({
+                        behavior:"smooth",
+                        block:"nearest"
+                    });
+
+            },
+            100
+        );
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        $("skeleton").style.display =
+            "none";
+
+        showError(
+            "Unable to get video information. Please try again."
+        );
+
+    }
+    finally{
+
+        $("getBtn").disabled =
+            false;
+
+        $("getBtn").textContent =
+            "Get Video";
+
+    }
+
+}
+
+
+/* =========================================================
+   FILE SIZE
+========================================================= */
+
+function formatBytes(bytes){
+
+    if(
+        !Number.isFinite(bytes) ||
+        bytes <= 0
+    ){
+
+        return "—";
+
+    }
+
+
+    const units =
+        [
+            "B",
+            "KB",
+            "MB",
+            "GB"
+        ];
+
+
+    const index =
+        Math.floor(
+            Math.log(bytes) /
+            Math.log(1024)
+        );
+
+
+    return (
+        (
+            bytes /
+            Math.pow(1024,index)
+        ).toFixed(
+            index === 0
+                ? 0
+                : 1
+        )
+        +
+        " " +
+        units[index]
+    );
+
+}
+
+
+/* =========================================================
+   SPEED
+========================================================= */
+
+function formatSpeed(value){
+
+    if(
+        !Number.isFinite(value) ||
+        value <= 0
+    ){
+
+        return "—";
+
+    }
+
+
+    return (
+        formatBytes(value) +
+        "/s"
+    );
+
+}
+
+
+/* =========================================================
+   ETA
+========================================================= */
+
+function formatETA(seconds){
+
+    if(
+        !Number.isFinite(seconds) ||
+        seconds < 0
+    ){
+
+        return "—";
+
+    }
+
+
+    seconds =
+        Math.ceil(seconds);
+
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+
+    const secs =
+        seconds % 60;
+
+
+    if(minutes >= 60){
+
+        const hours =
+            Math.floor(
+                minutes / 60
+            );
+
+        return (
+            hours +
+            "h " +
+            (minutes % 60) +
+            "m"
+        );
+
+    }
+
+
+    if(minutes > 0){
+
+        return (
+            minutes +
+            "m " +
+            secs +
+            "s"
+        );
+
+    }
+
+
+    return secs + "s";
+
+}
+
+
+/* =========================================================
+   FILENAME
+========================================================= */
+
+function makeFilename(
+    title,
+    extension
+){
+
+    let name =
+        String(
+            title ||
+            "youtube-download"
+        );
+
+
+    name =
+        name
+        .replace(
+            /[\\/:*?"<>|]/g,
+            ""
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim()
+        .substring(
+            0,
+            100
+        );
+
+
+    if(!name){
+
+        name =
+            "youtube-download";
+
+    }
+
+
+    return (
+        name +
+        "." +
+        extension
+    );
+
+}
+
+
+/* =========================================================
+   DOWNLOAD
+========================================================= */
+
+async function downloadFile(type){
+
+    clearError();
+
+
+    if(downloading){
+
+        return;
+
+    }
+
+
+    if(!currentVideo){
+
+        showError(
+            "Please get the video first."
+        );
+
+        return;
+
+    }
+
+
+    const fileUrl =
+        type === "mp4"
+            ? currentVideo.mp4
+            : currentVideo.mp3;
+
+
+    if(!fileUrl){
+
+        showError(
+            "This download format is unavailable."
+        );
+
+        return;
+
+    }
+
+
+    downloading =
+        true;
+
+
+    $("mp4Btn").disabled =
+        true;
+
+    $("mp3Btn").disabled =
+        true;
+
+
+    const progress =
+        $("progress");
+
+
+    const bar =
+        $("bar");
+
+
+    const status =
+        $("progressStatus");
+
+
+    const percent =
+        $("progressPercent");
+
+
+    const downloaded =
+        $("downloaded");
+
+
+    const speed =
+        $("speed");
+
+
+    const remaining =
+        $("remaining");
+
+
+    progress.style.display =
+        "block";
+
+
+    bar.style.width =
+        "0%";
+
+
+    percent.textContent =
+        "—";
+
+
+    downloaded.textContent =
+        "0 B";
+
+
+    speed.textContent =
+        "—";
+
+
+    remaining.textContent =
+        "—";
+
+
+    try{
+
+        status.textContent =
+            "Connecting...";
+
+
+        await wait(220);
+
+
+        const start =
+            performance.now();
+
+
+        const response =
+            await fetch(
+                fileUrl,
+                {
+                    method:"GET",
+                    mode:"cors",
+                    credentials:"omit",
+                    cache:"no-store"
+                }
+            );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const total =
+            Number(
+                response.headers
+                .get(
+                    "Content-Length"
+                )
+            ) || 0;
+
+
+        if(!response.body){
+
+            throw new Error(
+                "Streaming unavailable"
+            );
+
+        }
+
+
+        const reader =
+            response.body
+            .getReader();
+
+
+        const chunks = [];
+
+        let received = 0;
+
+
+        status.textContent =
+            "Downloading...";
+
+
+        while(true){
+
+            const {
+                done,
+                value
+            } =
+                await reader.read();
+
+
+            if(done){
+
+                break;
+
+            }
+
+
+            chunks.push(value);
+
+            received +=
+                value.byteLength;
+
+
+            const elapsed =
+                (
+                    performance.now() -
+                    start
+                ) / 1000;
+
+
+            const currentSpeed =
+                elapsed > 0
+                    ? received / elapsed
+                    : 0;
+
+
+            downloaded.textContent =
+                formatBytes(
+                    received
+                );
+
+
+            speed.textContent =
+                formatSpeed(
+                    currentSpeed
+                );
+
+
+            if(total > 0){
+
+                const progressValue =
+                    Math.min(
+                        99,
+                        Math.round(
+                            (
+                                received /
+                                total
+                            ) * 100
+                        )
+                    );
+
+
+                bar.style.width =
+                    progressValue +
+                    "%";
+
+
+                percent.textContent =
+                    progressValue +
+                    "%";
+
+
+                remaining.textContent =
+                    formatETA(
+                        (
+                            total -
+                            received
+                        ) /
+                        currentSpeed
+                    );
+
+            }
+            else{
+
+                /*
+                 * No Content-Length:
+                 * Don't fake percentage.
+                 */
+
+                bar.style.width =
+                    "45%";
+
+                percent.textContent =
+                    "•••";
+
+                remaining.textContent =
+                    "Calculating";
+
+            }
+
+        }
+
+
+        status.textContent =
+            "Preparing file...";
+
+
+        const blob =
+            new Blob(
+                chunks,
+                {
+                    type:
+                        response.headers
+                        .get(
+                            "Content-Type"
+                        ) ||
+                        (
+                            type === "mp4"
+                                ? "video/mp4"
+                                : "audio/mpeg"
+                        )
+                }
+            );
+
+
+        const blobUrl =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const filename =
+            makeFilename(
+                currentVideo.title,
+                type
+            );
+
+
+        /*
+         * LOCAL DOWNLOAD
+         *
+         * No new tab.
+         */
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+
+        link.href =
+            blobUrl;
+
+        link.download =
+            filename;
+
+        link.style.display =
+            "none";
+
+
+        document.body.appendChild(
+            link
+        );
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        bar.style.width =
+            "100%";
+
+
+        percent.textContent =
+            "100%";
+
+
+        downloaded.textContent =
+            formatBytes(
+                blob.size
+            );
+
+
+        remaining.textContent =
+            "Done";
+
+
+        status.textContent =
+            type === "mp4"
+                ? "MP4 download started ✓"
+                : "MP3 download started ✓";
+
+
+        setTimeout(
+            () => {
+
+                URL.revokeObjectURL(
+                    blobUrl
+                );
+
+            },
+            5000
+        );
+
+    }
+    catch(error){
+
+        console.error(
+            "Download error:",
+            error
+        );
+
+
+        bar.style.width =
+            "0%";
+
+        percent.textContent =
+            "—";
+
+        downloaded.textContent =
+            "—";
+
+        speed.textContent =
+            "—";
+
+        remaining.textContent =
+            "—";
+
+
+        status.textContent =
+            "Download unavailable";
+
+
+        showError(
+            "The download server must allow CORS for browser-based direct downloading."
+        );
+
+    }
+    finally{
+
+        downloading =
+            false;
+
+
+        $("mp4Btn").disabled =
+            false;
+
+        $("mp3Btn").disabled =
+            false;
+
+    }
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+$("getBtn")
+.addEventListener(
+    "click",
+    getVideo
+);
+
+
+$("mp4Btn")
+.addEventListener(
+    "click",
+    () =>
+        downloadFile("mp4")
+);
+
+
+$("mp3Btn")
+.addEventListener(
+    "click",
+    () =>
+        downloadFile("mp3")
+);
+
+
+$("urlInput")
+.addEventListener(
+    "keydown",
+    event => {
+
+        if(
+            event.key === "Enter"
+        ){
+
+            getVideo();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   BACKGROUND CLIPBOARD CHECK
+========================================================= */
+
+document.addEventListener(
+    "visibilitychange",
+    () => {
+
+        if(
+            document.visibilityState ===
+            "visible"
+        ){
+
+            detectClipboard();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>
