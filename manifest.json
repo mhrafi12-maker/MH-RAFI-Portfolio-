@@ -2,7 +2,7 @@
   "name": "MH RAFI All Media Downloader",
   "short_name": "MH RAFI DL",
   "description": "Download videos from YouTube, TikTok, Facebook and Instagram in high quality.",
-  "start_url": "./Yt.html",
+  "start_url": "./downloader.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
