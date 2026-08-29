@@ -1,0 +1,31 @@
+{
+  "name": "MH RAFI All Media Downloader",
+  "short_name": "MH RAFI DL",
+  "description": "Download videos from YouTube, TikTok, Facebook and Instagram in high quality.",
+  "start_url": "./Yt.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/364feed6-80f9-4811-a560-76056f92dace.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/364feed6-80f9-4811-a560-76056f92dace.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/364feed6-80f9-4811-a560-76056f92dace.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
