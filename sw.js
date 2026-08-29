@@ -2,7 +2,7 @@ const CACHE_NAME = 'mh-rafi-dl-v1';
 
 const CORE_ASSETS = [
     './',
-    './Yt.html',
+    './downloader.html',
     './manifest.json'
 ];
 
