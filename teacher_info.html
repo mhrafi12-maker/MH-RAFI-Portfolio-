@@ -436,6 +436,54 @@ html.dark .glass{
   .heroBadge.appHeroAvatar,.blob,.liquid-shine{animation:none!important}
 }
 
+
+/* ===== iOS 26 GLASS INTERACTION UPGRADE ===== */
+:root{
+  --glass-ultra:rgba(255,255,255,.48);
+  --glass-edge:rgba(255,255,255,.78);
+  --ios-ease:cubic-bezier(.22,1,.36,1);
+}
+html.dark{--glass-ultra:rgba(28,28,30,.50);--glass-edge:rgba(255,255,255,.14)}
+body{overflow-x:hidden}
+.glass,.card,.profileHero,.profileInfo{
+  position:relative;
+  isolation:isolate;
+  background:linear-gradient(145deg,var(--glass-ultra),rgba(255,255,255,.20)) !important;
+  border:1px solid var(--glass-edge) !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.85),inset 0 -1px 0 rgba(255,255,255,.16) !important;
+  transition:transform .42s var(--ios-ease),box-shadow .42s var(--ios-ease),border-color .3s ease,background .3s ease;
+}
+.glass:before,.card:before,.profileHero:before,.profileInfo:before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:linear-gradient(120deg,rgba(255,255,255,.30),transparent 38%,rgba(255,255,255,.08));
+}
+.card:hover{transform:translateY(-6px) scale(1.006);box-shadow:0 30px 80px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.9)!important}
+.press{transition:transform .18s var(--ios-ease),filter .18s ease,box-shadow .22s ease!important}
+.press:hover{filter:brightness(1.035)}
+.press:active{transform:scale(.91)!important;filter:brightness(.96)}
+.primary:active{transform:scale(.96)!important}
+.iconBtn:hover,.sortBtn:hover,.profileAction:hover,.quick button:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.10)}
+.input{transition:transform .28s var(--ios-ease),box-shadow .28s ease,background .28s ease}
+.input:focus{transform:scale(1.008);background:rgba(255,255,255,.42)!important}
+.reveal{animation:iosReveal .65s var(--ios-ease) both;animation-delay:var(--delay,0ms)}
+@keyframes iosReveal{from{opacity:0;transform:translateY(18px) scale(.985);filter:blur(5px)}to{opacity:1;transform:none;filter:blur(0)}}
+.favFloat{position:absolute;right:13px;top:13px;width:34px;height:34px;border:1px solid var(--iosStroke);border-radius:50%;background:rgba(255,255,255,.28);color:#ff9f0a;font-size:18px;z-index:3;backdrop-filter:blur(14px)}
+.fullProfile{width:100%;margin-top:10px;background:rgba(0,122,255,.10);color:var(--blue)}
+.infoRow.mini{padding:8px 9px}
+.activeFilters{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.activeFilters span{padding:5px 9px;border-radius:999px;background:rgba(0,122,255,.10);color:var(--blue);font-size:10px}
+.muted{color:var(--muted);font-size:11px}
+.sheetBack.show .sheet{animation:sheetUp .5s var(--ios-ease)}
+@keyframes sheetUp{from{transform:translateY(100%);opacity:.4}to{transform:none;opacity:1}}
+.sheetBack.show{animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.chip.interactive{transition:transform .2s var(--ios-ease),background .2s}
+.chip.interactive:hover{transform:translateY(-2px) scale(1.02)}
+@media(hover:none){.card:hover{transform:none}.press:hover{filter:none}}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+
 </style>
 </head>
 
@@ -533,7 +581,7 @@ html.dark .glass{
 /* App identity image */
 window.MH_RAFI_PROFILE_IMAGE = "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg";
 
-const API = "https://api.lmnx9.shop/Institute/teacher.php?eiin=";
+const API = "https://cxofb.nid-bd.my.id/eiin1.php?eiin=";
 let employees = [];
 let currentEIIN = "";
 let toastTimer;
@@ -587,7 +635,7 @@ async function loadInstitute(eiinOverride){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const data=await res.json();
     console.log("Teacher Info API:",data);
-    if(!data || (!data.lmnxdata && !data.lmnxData)) throw new Error("API response structure not recognized");
+    if(!data) throw new Error("খালি API response পাওয়া গেছে");
     saveRecent(eiin);
     render(data);
     window.scrollTo({top:0,behavior:"smooth"});
@@ -599,26 +647,66 @@ async function loadInstitute(eiinOverride){
   }
 }
 
-function normalizeRoot(data){
-  return data?.lmnxdata || data?.lmnxData || data?.data || {};
-}
 
+function normalizeRoot(data){
+  if(Array.isArray(data)) return data;
+  if(data && data.lmnxdata) return data.lmnxdata;
+  if(data && data.lmnxData) return data.lmnxData;
+  return data && (data.data || data.result || data.results) || data || {};
+}
+function findEmployeeArray(obj, seen=new Set(), depth=0){
+  if(!obj || typeof obj !== "object" || depth > 7 || seen.has(obj)) return [];
+  seen.add(obj);
+  if(Array.isArray(obj)){
+    if(obj.length && obj.some(x=>x && typeof x==="object" && (x.FullName || x.FullNameBn || x.EmpId || x.MobileNo || x.DesignationNameBn))) return obj;
+    for(const x of obj){ const r=findEmployeeArray(x,seen,depth+1); if(r.length) return r; }
+    return [];
+  }
+  const keys=["employees","employee","teachers","teacher","staff","data","result","results","lmnxdata","lmnxData","কর্মচারী","শিক্ষক","কর্মকর্তা"];
+  for(const k of keys){ if(obj[k]){ const r=findEmployeeArray(obj[k],seen,depth+1); if(r.length) return r; } }
+  for(const v of Object.values(obj)){ const r=findEmployeeArray(v,seen,depth+1); if(r.length) return r; }
+  return [];
+}
+function findInstituteObject(data, employees){
+  let best=null;
+  const seen=new Set();
+  function walk(o,depth=0){
+    if(!o || typeof o!=="object" || depth>7 || seen.has(o)) return;
+    seen.add(o);
+    if(!Array.isArray(o)){
+      const score=["InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","EIIN","eiin","InstituteManagementTypeId","InstituteInstituteCategoryId"].reduce((n,k)=>n+(o[k]!=null?1:0),0);
+      if(score>=2 && (!best || score>best.score)) best={score,obj:o};
+      Object.values(o).forEach(v=>walk(v,depth+1));
+    }
+  }
+  walk(data);
+  return best ? best.obj : (employees[0] || {});
+}
+function cleanDisplay(v){
+  if(v===null || v===undefined) return "তথ্য নেই";
+  const s=String(v).trim().replace(/^['"]|['"]$/g,"");
+  if(!s || /^(null|undefined|NULL|N\/A|NA|-|—)$/i.test(s)) return "তথ্য নেই";
+  return s;
+}
 function render(data){
   const root=normalizeRoot(data);
-  const inst=root.institute || root.Institute || root.ইনস্টিটিউট || {};
-  employees=Array.isArray(root.employees) ? root.employees :
-            Array.isArray(root.employee) ? root.employee :
-            Array.isArray(root.কর্মচারী) ? root.কর্মচারী : [];
+  employees=findEmployeeArray(data);
+  const inst=findInstituteObject(data,employees);
 
-  const name=pick(inst,["name_bn","নাম_বি","নাম","name"]) || "প্রতিষ্ঠানের নাম";
-  const eiin=pick(inst,["eiin","EIIN"]) || currentEIIN;
-  const total=pick(inst,["total_employees","মোট সদস্য","মোট_সদস্য"]) || employees.length;
-  const totalSubjects=pick(inst,["total_subjects","মোট অংশগ্রহণকারী","মোট_বিষয়"]) || 0;
-  const design=inst.designation_summary || inst["পদবি_সারাংশ"] || inst["পদবি_সার অংশ"] || {};
-  const subjects=inst.subjects || inst["বিষয়সমূহ"] || inst["বিষয়সমূহ"] || [];
+  const name=cleanDisplay(pick(inst,[
+    "InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","name_bn","name","নাম"
+  ]));
+  const eiin=cleanDisplay(pick(inst,["EIIN","eiin"])) || currentEIIN;
+  const total=pick(inst,["TotalEmployees","total_employees","মোট সদস্য"]) || employees.length;
 
-  let html=`
-  <section class="glass institute">
+  const subjectSet=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName)).filter(x=>x!=="তথ্য নেই"))];
+  const designationCount={};
+  employees.forEach(p=>{
+    const d=cleanDisplay(p.DesignationNameBn || p.DesignationName);
+    if(d!=="তথ্য নেই") designationCount[d]=(designationCount[d]||0)+1;
+  });
+
+  let html=`<section class="glass institute reveal">
     <div class="instHead">
       <div class="instIcon">🏫</div>
       <div>
@@ -629,34 +717,31 @@ function render(data){
     <div class="stats">
       <div class="stat"><div class="num">${safe(total)}</div><span>মোট সদস্য</span></div>
       <div class="stat"><div class="num">${employees.length}</div><span>দেখানো হয়েছে</span></div>
-      <div class="stat"><div class="num">${safe(totalSubjects)}</div><span>বিষয়</span></div>
-    </div>`;
-
-  if(design && typeof design==="object"){
-    html+=`<div class="section"><div class="sectionTitle">👔 পদবি অনুযায়ী সংখ্যা</div><div class="chips">`;
-    Object.entries(design).forEach(([k,v])=>html+=`<div class="chip">${safe(k)} · <b>${safe(v)}</b></div>`);
-    html+=`</div></div>`;
-  }
-
-  if(Array.isArray(subjects) && subjects.length){
-    html+=`<div class="section"><div class="sectionTitle">📚 বিষয়সমূহ</div><div class="chips">`;
-    subjects.forEach(s=>html+=`<div class="chip">${safe(s)}</div>`);
-    html+=`</div></div>`;
-  }
-  html+=`</section>`;
-
-  html+=`
-  <section class="glass filter">
-    <div class="filterRow">
-      <input id="filter" class="input" placeholder="🔍 নাম, পদবি, বিষয় বা যেকোনো তথ্য..." oninput="filterEmployees()">
-      <button class="sortBtn" onclick="sortEmployees()">↕️</button>
+      <div class="stat"><div class="num">${subjectSet.length}</div><span>বিষয়</span></div>
+    </div>
+    <div class="section">
+      <div class="sectionTitle">👔 পদবি অনুযায়ী সংখ্যা</div>
+      <div class="chips">${Object.entries(designationCount).map(([k,v])=>`<div class="chip interactive">${safe(k)} · <b>${v}</b></div>`).join("") || '<div class="muted">তথ্য নেই</div>'}</div>
+    </div>
+    <div class="section">
+      <div class="sectionTitle">📚 বিষয়সমূহ</div>
+      <div class="chips">${subjectSet.map(s=>`<div class="chip interactive">${safe(s)}</div>`).join("") || '<div class="muted">তথ্য নেই</div>'}</div>
     </div>
   </section>
-  <div class="resultMeta"><span id="resultCount"></span><span>Teacher Info by MH RAFI</span></div>
+  <section class="glass filter reveal">
+    <div class="filterRow">
+      <input id="filter" class="input" placeholder="🔍 নাম, পদবি, বিষয়, মোবাইল..." oninput="filterEmployees()">
+      <button class="sortBtn press" onclick="sortEmployees()">↕️</button>
+      <button class="sortBtn press" onclick="openAdvancedFilter()">☷</button>
+    </div>
+    <div id="filterChips" class="activeFilters"></div>
+  </section>
+  <div class="resultMeta"><span id="resultCount"></span><span>Teacher Info • MH RAFI</span></div>
   <section class="grid" id="employeesGrid"></section>`;
 
   $("result").innerHTML=html;
   renderEmployees(employees);
+  requestAnimationFrame(()=>document.querySelectorAll(".reveal").forEach((el,i)=>el.style.setProperty("--delay",`${i*45}ms`)));
 }
 
 function renderEmployees(list){
@@ -668,51 +753,92 @@ function renderEmployees(list){
 }
 
 function employeeCard(person,index){
-  const photo=pick(person,["ছবি","photo","image","photo_url","Photo","Image"]);
-  const name=pick(person,["পূর্ণ নাম","পুরো নাম","পূর্ণনাম","FullNameBn","full_name","name_bn","name"]) || "নাম পাওয়া যায়নি";
+  const photo=pick(person,["Image","ছবি","photo","image","photo_url","Photo"]);
+  const name=pick(person,["FullNameBn","পূর্ণ নাম","পুরো নাম","name_bn","name"]) || "নাম পাওয়া যায়নি";
   const en=pick(person,["FullName","full_name_en","name_en"]);
-  const designation=pick(person,["DesignationNameBn","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"]);
-  const mobile=pick(person,["মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"]);
-  const email=pick(person,["ইমেইল","email"]);
+  const designation=pick(person,["DesignationNameBn","DesignationName","পদবী","পদবি"]);
+  const mobile=pick(person,["MobileNo","মোবাইল","মোবাইল নম্বর","phone","mobile"]);
+  const email=pick(person,["Email","ইমেইল","email"]);
+  const subject=pick(person,["SubjectName","বিষয়","বিষয়"]);
+  const indexNo=pick(person,["IndexNo","Index","সূচক"]);
+  const fav=isFav(person);
 
-  let info="";
-  Object.entries(person).forEach(([key,value])=>{
-    if(value===null || value===undefined || value==="") return;
-    if(["ছবি","photo","image","photo_url","Photo","Image"].includes(key)) return;
-    let display=typeof value==="object" ? JSON.stringify(value) : String(value);
-    info+=`<div class="infoRow"><div class="infoIcon">${iconFor(key)}</div><div><span class="infoKey">${safe(key)}</span><span class="infoValue">${safe(display)}</span></div></div>`;
-  });
+  const infoItems=[
+    ["📚","বিষয়",subject],
+    ["🪪","Index No",indexNo],
+    ["📱","Mobile",mobile]
+  ].filter(x=>x[2]!=="" && cleanDisplay(x[2])!=="তথ্য নেই");
+
+  const info=infoItems.map(([ic,k,v])=>`<div class="infoRow mini"><div class="infoIcon">${ic}</div><div><span class="infoKey">${k}</span><span class="infoValue">${safe(cleanDisplay(v))}</span></div></div>`).join("");
 
   const img=photo
     ? `<img class="avatar" src="${attr(photo)}" alt="Teacher Photo" onclick="openViewer('${attr(photo)}')" onerror="this.outerHTML='<div class=\\'avatarPlaceholder\\'>👤</div>'">`
     : `<div class="avatarPlaceholder">👤</div>`;
 
-  return `<article class="card">
+  return `<article class="card reveal" style="--delay:${Math.min(index,12)*35}ms">
     <div class="glow"></div>
+    <button class="favFloat press" onclick="event.stopPropagation();toggleFav(${index})">${fav?"★":"☆"}</button>
     <div class="profile">
       ${img}
-      <div>
+      <div class="profileText">
         <div class="name">${safe(name)}</div>
         ${en?`<div class="fullName">${safe(en)}</div>`:""}
         ${designation?`<span class="badge">${safe(designation)}</span>`:""}
       </div>
     </div>
     <div class="infoList">${info}</div>
-    <button class="action" style="width:100%;margin-top:10px;background:rgba(0,122,255,.09);color:var(--blue)" onclick="openProfile(${index})"> View Full Profile</button><div class="actions">
-      <button class="action call" ${mobile?`onclick="callPerson('${attr(mobile)}')"`:"disabled"}>📞 Call</button>
-      <button class="action email" ${email?`onclick="emailPerson('${attr(email)}')"`:"disabled"}>✉️ Email</button>
-      <button class="action copy" onclick="copyPerson(${index})">📋 Copy</button>
-      <button class="action share" onclick="sharePerson(${index})">↗️ Share</button>
+    <button class="action fullProfile press" onclick="openProfile(${index})"> View Full Profile</button>
+    <div class="actions">
+      <button class="action call press" ${mobile?`onclick="callPerson('${attr(mobile)}')"`:"disabled"}>📞</button>
+      <button class="action email press" ${email?`onclick="emailPerson('${attr(email)}')"`:"disabled"}>✉️</button>
+      <button class="action copy press" onclick="copyPerson(${index})">📋</button>
+      <button class="action share press" onclick="sharePerson(${index})">↗️</button>
     </div>
   </article>`;
 }
 
 function filterEmployees(){
   const q=($("filter")?.value||"").toLowerCase().trim();
-  const list=employees.filter(p=>JSON.stringify(p).toLowerCase().includes(q));
+  const list=employees.filter(p=>{
+    const text=Object.values(p||{}).map(cleanDisplay).join(" ").toLowerCase();
+    return text.includes(q);
+  });
   renderEmployees(list);
 }
 
+function openAdvancedFilter(){
+  showToast("☷ Advanced Filter");
+  const subjects=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName)).filter(x=>x!=="তথ্য নেই"))];
+  const designations=[...new Set(employees.map(p=>cleanDisplay(p.DesignationNameBn)).filter(x=>x!=="তথ্য নেই"))];
+  const box=document.createElement("div");
+  box.className="sheetBack show";
+  box.id="advancedFilterSheet";
+  box.innerHTML=`<div class="sheet" onclick="event.stopPropagation()">
+    <div class="grabber"></div>
+    <div class="settingText"><b>Advanced Filter</b><span>বিষয় ও পদবি দিয়ে দ্রুত বাছাই করুন</span></div>
+    <div class="settingRow"><div class="settingText"><b>Subject</b></div>
+      <select id="advSubject" class="input" style="width:55%;height:44px"><option value="">সব বিষয়</option>${subjects.map(x=>`<option>${safe(x)}</option>`).join("")}</select>
+    </div>
+    <div class="settingRow"><div class="settingText"><b>Designation</b></div>
+      <select id="advDesignation" class="input" style="width:55%;height:44px"><option value="">সব পদ</option>${designations.map(x=>`<option>${safe(x)}</option>`).join("")}</select>
+    </div>
+    <button class="primary" style="height:48px;width:100%;margin-top:12px" onclick="applyAdvancedFilter()">Apply Filter</button>
+  </div>`;
+  box.onclick=()=>box.remove();
+  document.body.appendChild(box);
+}
+function applyAdvancedFilter(){
+  const s=($("advSubject")?.value||"").toLowerCase();
+  const d=($("advDesignation")?.value||"").toLowerCase();
+  const list=employees.filter(p=>{
+    const ps=cleanDisplay(p.SubjectName).toLowerCase();
+    const pd=cleanDisplay(p.DesignationNameBn).toLowerCase();
+    return (!s||ps===s)&&(!d||pd===d);
+  });
+  $("advancedFilterSheet")?.remove();
+  renderEmployees(list);
+  showToast(`✓ ${list.length} জন পাওয়া গেছে`);
+}
 function sortEmployees(){
   employees.sort((a,b)=>{
     const A=String(pick(a,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
@@ -727,7 +853,7 @@ async function copyPerson(index){
   const p=employees[index]; if(!p) return;
   let text="";
   Object.entries(p).forEach(([k,v])=>{
-    if(v!==null&&v!==undefined) text+=`${k}: ${typeof v==="object"?JSON.stringify(v):v}\n`;
+    if(v!==null&&v!==undefined) text+=`${k}: ${typeof v==="object"?JSON.stringify(v):cleanDisplay(v)}\n`;
   });
   try{await navigator.clipboard.writeText(text);showToast("✅ সম্পূর্ণ তথ্য কপি হয়েছে");}
   catch{showToast("❌ কপি করা যায়নি");}
@@ -740,7 +866,7 @@ async function sharePerson(index){
   const p=employees[index]; if(!p) return;
   const name=pick(p,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher";
   let text=`${name}\nTeacher Info by MH RAFI\n`;
-  Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!==undefined&&k!=="ছবি")text+=`${k}: ${typeof v==="object"?JSON.stringify(v):v}\n`});
+  Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!==undefined&&k!=="ছবি")text+=`${k}: ${typeof v==="object"?JSON.stringify(v):cleanDisplay(v)}\n`});
   if(navigator.share){try{await navigator.share({title:name,text})}catch{}}
   else {try{await navigator.clipboard.writeText(text);showToast("📋 Share API নেই — তথ্য কপি হয়েছে")}catch{}}
 }
@@ -794,11 +920,11 @@ renderRecent();
 
 /* Premium Teacher Profile */
 let activeProfileIndex=-1;
-function personName(p){return pick(p,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher"}
-function personPhoto(p){return pick(p,["ছবি","photo","image","photo_url","Photo","Image"])}
-function personDesignation(p){return pick(p,["DesignationNameBn","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"])||"Designation not available"}
-function personMobile(p){return pick(p,["মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"])}
-function personEmail(p){return pick(p,["ইমেইল","email"])}
+function personName(p){return pick(p,["FullNameBn","FullName","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher"}
+function personPhoto(p){return pick(p,["Image","ছবি","photo","image","photo_url","Photo"])}
+function personDesignation(p){return pick(p,["DesignationNameBn","DesignationName","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"])||"Designation not available"}
+function personMobile(p){return pick(p,["MobileNo","মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"])}
+function personEmail(p){return pick(p,["Email","ইমেইল","email"])}
 function favKey(p){return "teacher_fav_"+String(pick(p,["EmpId","আইডি","ID","id"])||personName(p))}
 function isFav(p){return localStorage.getItem(favKey(p))==="1"}
 function toggleFav(i){
@@ -820,8 +946,8 @@ function openProfile(i){
   let rows="";
   Object.entries(p).forEach(([k,v])=>{
     if(v===null||v===undefined||v==="")return;
-    if(["ছবি","photo","image","photo_url","Photo","Image"].includes(k))return;
-    rows+=`<div class="infoRow"><div class="infoIcon">${iconFor(k)}</div><div><span class="infoKey">${safe(k)}</span><span class="infoValue">${safe(typeof v==="object"?JSON.stringify(v):v)}</span></div></div>`;
+    if(["Image","ছবি","photo","image","photo_url","Photo"].includes(k))return;
+    rows+=`<div class="infoRow"><div class="infoIcon">${iconFor(k)}</div><div><span class="infoKey">${safe(k)}</span><span class="infoValue">${safe(typeof v==="object"?JSON.stringify(v):cleanDisplay(v))}</span></div></div>`;
   });
   const img=photo?`<img class="profilePhoto" src="${attr(photo)}" alt="Teacher Photo" onclick="openViewer('${attr(photo)}')">`:`<div class="profilePhotoPlaceholder">👤</div>`;
   $("profileContent").innerHTML=`<section class="profileHero">${img}<h2>${safe(name)}</h2><p>${safe(des)}</p><div class="profileActions">${mobile?`<button class="profileAction" onclick="callPerson('${attr(mobile)}')">📞 Call</button>`:""}${email?`<button class="profileAction" onclick="emailPerson('${attr(email)}')">✉️ Email</button>`:""}<button class="profileAction" onclick="copyPerson(${i})">📋 Copy</button><button class="profileAction" onclick="sharePerson(${i})">↗️ Share</button></div></section><section class="profileInfo"><div style="font-size:15px;font-weight:800;margin-bottom:12px">Official Information</div>${rows||'<div class="emptyHint">অতিরিক্ত তথ্য নেই।</div>'}</section>`;
