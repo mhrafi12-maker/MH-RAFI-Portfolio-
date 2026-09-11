@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SF Pro / Apple System Font Style -->
+    <!-- SF Pro / Apple System Font & Animations -->
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -16,122 +16,225 @@
             color: #ffffff;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
         }
+
+        /* iOS Background Animated Gradient Orbs */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: floatOrb 10s infinite alternate ease-in-out;
+        }
+
+        .orb-1 {
+            width: 250px;
+            height: 250px;
+            background: #007AFF;
+            top: -50px;
+            left: -50px;
+            animation-duration: 8s;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #5856D6;
+            bottom: -50px;
+            right: -50px;
+            animation-duration: 12s;
+        }
+
+        .orb-3 {
+            width: 200px;
+            height: 200px;
+            background: #AF52DE;
+            top: 40%;
+            left: 30%;
+            animation-duration: 10s;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translateY(0px) translateX(0px) scale(1); }
+            50% { transform: translateY(40px) translateX(30px) scale(1.1); }
+            100% { transform: translateY(-30px) translateX(-40px) scale(0.9); }
+        }
+
         /* iOS Glassmorphism */
         .ios-glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
+
         .ios-input {
             background: rgba(120, 120, 128, 0.24);
             border: 0.5px solid rgba(255, 255, 255, 0.15);
             color: #ffffff;
         }
+
         .ios-input:focus {
             background: rgba(120, 120, 128, 0.35);
             border-color: #0a84ff;
         }
-        /* iOS Action Sheet Modal animation */
+
         #pickerModal {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-5 bg-gradient-to-b from-[#1c1c1e] via-[#000000] to-[#000000]">
+<body class="min-h-screen flex flex-col justify-between p-4 relative">
 
-    <!-- Top iOS Status Bar (Only Clock as requested) -->
-    <div class="flex justify-between items-center text-sm text-white px-2 py-1 font-semibold tracking-wide">
-        <span id="clock">9:41</span>
-        <div class="flex items-center space-x-1 text-xs text-gray-400">
-            <span>PrankOS</span>
-        </div>
+    <!-- Background Animated Orbs -->
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
     </div>
 
-    <!-- Main Content Full Screen Container -->
-    <div class="w-full max-w-md mx-auto my-auto flex flex-col justify-center space-y-6">
+    <!-- Main Content Container -->
+    <div class="w-full max-w-md mx-auto my-auto flex flex-col justify-center space-y-4 z-10">
         
         <!-- App Header & Branding -->
         <div class="text-center">
-            <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[28px] mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/30 mb-4 border border-white/20">
-                <i class="fa-solid fa-masks-theater text-4xl text-white"></i>
+            <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[22px] mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/40 mb-2 border border-white/20">
+                <i class="fa-solid fa-masks-theater text-2xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-bold tracking-tight text-white">Prank Call</h1>
-            <p class="text-xs text-blue-400 font-medium mt-1 tracking-widest uppercase">Prank Call By MH RAFI</p>
+            <h1 class="text-lg font-bold tracking-tight text-white">Prank Call</h1>
+            <p class="text-[11px] text-blue-400 font-medium tracking-widest uppercase">Prank Call By MH RAFI</p>
         </div>
 
         <!-- Form Section -->
-        <form id="prankForm" class="space-y-4 ios-glass p-6 rounded-[32px] shadow-2xl">
+        <form id="prankForm" class="space-y-3 ios-glass p-4 rounded-[26px] shadow-2xl">
             <div>
-                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">Phone Number</label>
+                <label class="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1 ml-1">Phone Number</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
-                        <i class="fa-solid fa-phone text-sm"></i>
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                        <i class="fa-solid fa-phone text-xs"></i>
                     </span>
-                    <input type="text" id="phone" required placeholder="017xxxxxxxx" 
-                        class="w-full pl-11 pr-4 py-3.5 ios-input rounded-2xl text-base focus:outline-none placeholder-gray-500 transition">
+                    <input type="tel" id="phone" required placeholder="017xxxxxxxx" maxlength="11"
+                        class="w-full pl-10 pr-4 py-2.5 ios-input rounded-xl text-xs focus:outline-none placeholder-gray-400 transition">
                 </div>
             </div>
 
-            <!-- iOS Style Custom Picker/Dropdown Trigger -->
+            <!-- iOS Style Custom Picker Trigger -->
             <div>
-                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">Select Prank</label>
-                <div id="pickerTrigger" class="w-full pl-4 pr-4 py-3.5 ios-input rounded-2xl text-sm focus:outline-none cursor-pointer flex items-center justify-between transition active:scale-[0.98]">
-                    <div class="flex items-center space-x-3 truncate">
-                        <i class="fa-solid fa-masks-theater text-gray-400 text-sm"></i>
-                        <span id="selectedPrankText" class="text-gray-400 truncate">একটি প্র্যাঙ্ক সিলেক্ট করুন</span>
+                <label class="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1 ml-1">Select Prank</label>
+                <div id="pickerTrigger" class="w-full pl-3.5 pr-4 py-2.5 ios-input rounded-xl text-xs focus:outline-none cursor-pointer flex items-center justify-between transition active:scale-[0.98]">
+                    <div class="flex items-center space-x-2.5 truncate">
+                        <i class="fa-solid fa-masks-theater text-gray-400 text-xs"></i>
+                        <span id="selectedPrankText" class="text-gray-300 truncate">একটি প্র্যাঙ্ক সিলেক্ট করুন (বা অটো হবে)</span>
                     </div>
-                    <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-[10px]"></i>
                 </div>
-                <!-- Hidden select to store value -->
-                <input type="hidden" id="prank_id" required>
+                <input type="hidden" id="prank_id">
+            </div>
+
+            <!-- Custom Spam Count Input -->
+            <div>
+                <label class="block text-[11px] font-semibold text-gray-300 uppercase tracking-wider mb-1 ml-1">Spam Count (কতবার পাঠাবেন)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                        <i class="fa-solid fa-repeat text-xs"></i>
+                    </span>
+                    <input type="number" id="spamCount" value="1" min="1" max="50" required
+                        class="w-full pl-10 pr-4 py-2.5 ios-input rounded-xl text-xs focus:outline-none placeholder-gray-400 transition" placeholder="সংখ্যা লিখুন (যেমন: 5)">
+                </div>
             </div>
 
             <button type="submit" id="submitBtn" 
-                class="w-full mt-3 bg-[#007AFF] hover:bg-[#0062cc] active:scale-95 text-white font-semibold py-4 px-4 rounded-2xl shadow-lg shadow-blue-500/30 transition duration-200 flex items-center justify-center space-x-2 text-base">
-                <i class="fa-solid fa-paper-plane text-sm"></i>
+                class="w-full mt-1 bg-[#007AFF] hover:bg-[#0062cc] active:scale-95 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition duration-200 flex items-center justify-center space-x-2 text-xs">
+                <i class="fa-solid fa-paper-plane text-[11px]"></i>
                 <span>Send Prank</span>
             </button>
         </form>
 
         <!-- Response Message Notification Box -->
-        <div id="responseBox" class="hidden p-4 rounded-2xl text-xs font-medium text-center transition-all duration-300"></div>
+        <div id="responseBox" class="hidden p-2.5 rounded-xl text-[11px] font-medium text-center transition-all duration-300"></div>
+
+        <!-- Live Log / History Section with Timestamp -->
+        <div id="historySection" class="ios-glass p-3 rounded-2xl hidden">
+            <div class="flex justify-between items-center mb-1.5 px-1">
+                <span class="text-[10px] font-semibold text-gray-300 uppercase">Live Logs & Time</span>
+                <button type="button" id="clearHistory" class="text-[10px] text-rose-400 hover:underline">Clear Logs</button>
+            </div>
+            <div id="historyList" class="space-y-1 max-h-24 overflow-y-auto text-[10px] text-gray-200"></div>
+        </div>
+
+        <!-- Visit My Portfolio Link Button -->
+        <a href="https://mh-rafi-portfolio.vercel.app/" target="_blank" 
+           class="w-full ios-glass hover:bg-white/15 active:scale-95 transition-all duration-200 py-3 px-4 rounded-xl flex items-center justify-between text-xs font-medium text-gray-200 group shadow-lg border border-white/20">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center group-hover:bg-purple-500/30 transition">
+                    <i class="fa-solid fa-globe text-xs"></i>
+                </div>
+                <span>Visit My <strong class="text-white font-semibold">Portfolio</strong></span>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-gray-400 text-[10px]"></i>
+        </a>
 
         <!-- Dev MH Telegram Link Button -->
         <a href="https://t.me/mhtechonline" target="_blank" 
-           class="w-full ios-glass hover:bg-white/10 active:scale-95 transition-all duration-200 py-3.5 px-5 rounded-2xl flex items-center justify-between text-sm font-medium text-gray-300 group shadow-lg">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center group-hover:bg-sky-500/30 transition">
-                    <i class="fa-brands fa-telegram text-base"></i>
+           class="w-full ios-glass hover:bg-white/15 active:scale-95 transition-all duration-200 py-2.5 px-4 rounded-xl flex items-center justify-between text-xs font-medium text-gray-200 group shadow-lg">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center group-hover:bg-sky-500/30 transition">
+                    <i class="fa-brands fa-telegram text-xs"></i>
                 </div>
                 <span>Developed by <strong class="text-white font-semibold">Dev MH</strong></span>
             </div>
-            <i class="fa-solid fa-arrow-up-right-from-square text-gray-500 text-xs"></i>
+            <i class="fa-solid fa-arrow-up-right-from-square text-gray-400 text-[10px]"></i>
         </a>
     </div>
 
     <!-- Footer Credit -->
-    <div class="text-center py-4">
-        <p class="text-xs text-gray-500">Love You Munnu • <span class="text-gray-400 font-semibold">MH RAFI</span></p>
+    <div class="text-center py-1 z-10">
+        <p class="text-[10px] text-gray-400">Secure iOS Edition • <span class="text-gray-200 font-semibold">MH RAFI</span></p>
     </div>
 
     <!-- iOS Native Style Picker Action Sheet Modal -->
-    <div id="pickerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="pickerSheet" class="w-full max-w-md bg-[#1c1c1e] border-t border-white/15 rounded-t-[36px] p-5 max-h-[80vh] overflow-y-auto transform translate-y-full transition-transform duration-300 shadow-2xl">
-            <div class="flex justify-between items-center mb-4 px-2">
-                <span class="text-base font-semibold text-white">Choose Prank</span>
-                <button type="button" id="closePicker" class="text-blue-500 font-semibold text-sm px-3 py-1 bg-blue-500/10 rounded-full">Done</button>
+    <div id="pickerModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="pickerSheet" class="w-full max-w-md bg-[#1c1c1e]/90 backdrop-blur-2xl border-t border-white/20 rounded-t-[28px] p-4 max-h-[80vh] overflow-y-auto transform translate-y-full transition-transform duration-300 shadow-2xl">
+            <div class="flex justify-between items-center mb-3 px-2">
+                <span class="text-xs font-semibold text-white">Choose Prank ID (Optional)</span>
+                <button type="button" id="closePicker" class="text-blue-400 font-semibold text-xs px-2.5 py-1 bg-blue-500/20 rounded-full">Done</button>
             </div>
-            <div class="space-y-2 pb-6" id="prankOptionsList">
-                <!-- Options will be injected via JS -->
-            </div>
+            <div class="space-y-1 pb-2" id="prankOptionsList"></div>
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- Secure Script & Logic Protection -->
     <script>
-        // Prank CallData List
+        // Anti-Inspection & Console Protection
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                alert('Action Not Allowed!');
+            }
+        });
+
+        // Obfuscated API Base
+        const _0x1a = ['https://', 'cxofb.nid-bd.my.id', '/wrom-gpt/api.php?phone=', '&prank_id='];
+        function getSecureUrl(p, i) {
+            return _0x1a[0] + _0x1a[1] + _0x1a[2] + encodeURIComponent(p) + _0x1a[3] + encodeURIComponent(i);
+        }
+
+        // Prank Data List
         const prankData = [
             { id: "8810", title: "আপনি আমার গার্লফ্রেন্ডকে কল করেন কেন?" },
             { id: "8805", title: "গাজার মতো দুর্গন্ধ!" },
@@ -143,20 +246,20 @@
             { id: "8807", title: "আপনার কুকুরটি খুবই ক্লান্তিকর!" }
         ];
 
-        // Populate iOS Picker Options
+        // Populate Picker Options
         const optionsListContainer = document.getElementById('prankOptionsList');
         prankData.forEach(item => {
             const div = document.createElement('div');
-            div.className = "p-3.5 rounded-2xl bg-white/5 hover:bg-blue-500/20 border border-white/5 hover:border-blue-500/30 text-sm text-gray-200 cursor-pointer transition flex items-center justify-between";
-            div.innerHTML = `<span>${item.id} - ${item.title}</span><i class="fa-solid fa-check text-blue-500 opacity-0 check-icon"></i>`;
+            div.className = "p-2.5 rounded-xl bg-white/5 hover:bg-blue-500/20 border border-white/5 text-[11px] text-gray-200 cursor-pointer transition flex items-center justify-between";
+            div.innerHTML = `<span>${item.id} - ${item.title}</span><i class="fa-solid fa-check text-blue-400 opacity-0 check-icon"></i>`;
             
             div.addEventListener('click', () => {
+                if (navigator.vibrate) navigator.vibrate(20);
                 document.getElementById('prank_id').value = item.id;
                 document.getElementById('selectedPrankText').innerText = `${item.id} - ${item.title}`;
-                document.getElementById('selectedPrankText').classList.remove('text-gray-400');
+                document.getElementById('selectedPrankText').classList.remove('text-gray-300');
                 document.getElementById('selectedPrankText').classList.add('text-white');
                 
-                // Highlight selected item
                 document.querySelectorAll('#prankOptionsList > div').forEach(el => {
                     el.classList.remove('bg-blue-500/20', 'border-blue-500/30');
                     el.querySelector('.check-icon').style.opacity = '0';
@@ -169,13 +272,11 @@
             optionsListContainer.appendChild(div);
         });
 
-        // iOS Modal Open/Close Logic
+        // Modal Controls
         const pickerModal = document.getElementById('pickerModal');
         const pickerSheet = document.getElementById('pickerSheet');
-        const pickerTrigger = document.getElementById('pickerTrigger');
-        const closePicker = document.getElementById('closePicker');
-
-        pickerTrigger.addEventListener('click', () => {
+        document.getElementById('pickerTrigger').addEventListener('click', () => {
+            if (navigator.vibrate) navigator.vibrate(15);
             pickerModal.classList.remove('opacity-0', 'pointer-events-none');
             pickerSheet.classList.remove('translate-y-full');
         });
@@ -184,24 +285,35 @@
             pickerModal.classList.add('opacity-0', 'pointer-events-none');
             pickerSheet.classList.add('translate-y-full');
         }
+        document.getElementById('closePicker').addEventListener('click', closePickerModal);
+        pickerModal.addEventListener('click', (e) => { if (e.target === pickerModal) closePickerModal(); });
 
-        closePicker.addEventListener('click', closePickerModal);
-        pickerModal.addEventListener('click', (e) => {
-            if (e.target === pickerModal) closePickerModal();
+        // History / Log Management with Time
+        let logs = JSON.parse(localStorage.getItem('prank_logs') || '[]');
+        function renderLogs() {
+            const logSec = document.getElementById('historySection');
+            const logList = document.getElementById('historyList');
+            if (logs.length === 0) {
+                logSec.classList.add('hidden');
+                return;
+            }
+            logSec.classList.remove('hidden');
+            logList.innerHTML = logs.slice(-5).reverse().map(l => 
+                `<div class="flex justify-between items-center bg-white/5 px-2 py-1 rounded-lg">
+                    <span>📱 ${l.phone} (ID: <strong class="text-blue-400">${l.id}</strong>)</span>
+                    <span class="text-gray-400 text-[9px]">${l.time}</span>
+                </div>`
+            ).join('');
+        }
+        renderLogs();
+
+        document.getElementById('clearHistory').addEventListener('click', () => {
+            logs = [];
+            localStorage.removeItem('prank_logs');
+            renderLogs();
         });
 
-        // Live iOS Time Updater
-        function updateClock() {
-            const now = new Date();
-            let hours = now.getHours();
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            hours = hours % 12 || 12;
-            document.getElementById('clock').innerText = `${hours}:${minutes}`;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // Prank CallForm Handler
+        // Form Submit & Auto ID Rotation Spam Engine
         const form = document.getElementById('prankForm');
         const submitBtn = document.getElementById('submitBtn');
         const responseBox = document.getElementById('responseBox');
@@ -209,36 +321,57 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const phone = document.getElementById('phone').value.trim();
-            const prank_id = document.getElementById('prank_id').value;
+            let manualId = document.getElementById('prank_id').value;
+            const spamCount = parseInt(document.getElementById('spamCount').value) || 1;
 
-            if (!prank_id) {
-                alert('দয়া করে একটি প্র্যাঙ্ক সিলেক্ট করুন!');
+            // Phone Validation
+            if (!/^01[3-9]\d{8}$/.test(phone)) {
+                if (navigator.vibrate) navigator.vibrate(50);
+                alert('দয়া করে সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017xxxxxxxx)');
                 return;
             }
 
-            const apiUrl = `https://cxofb.nid-bd.my.id/wrom-gpt/api.php?phone=${encodeURIComponent(phone)}&prank_id=${encodeURIComponent(prank_id)}`;
+            if (navigator.vibrate) navigator.vibrate(30);
 
-            // iOS Button Loading State
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm"></i><span>Sending...</span>`;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-xs"></i><span>Sending (${spamCount}x)...</span>`;
             responseBox.classList.add('hidden');
 
             try {
-                await fetch(apiUrl, { mode: 'no-cors' });
+                for (let i = 0; i < spamCount; i++) {
+                    let currentId = manualId;
+                    if (!currentId) {
+                        const randomPrank = prankData[Math.floor(Math.random() * prankData.length)];
+                        currentId = randomPrank.id;
+                    }
 
-                // Success Alert (iOS Style)
-                responseBox.className = "mt-4 p-4 rounded-2xl text-xs font-medium text-center bg-emerald-500/20 border border-emerald-500/30 text-emerald-300";
-                responseBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-400"></i> Prank CallSent Successfully by MH RAFI!`;
+                    const secureLink = getSecureUrl(phone, currentId);
+                    fetch(secureLink, { mode: 'no-cors' }).catch(() => {});
+
+                    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    logs.push({ phone: phone, id: currentId, time: nowTime });
+
+                    if (i < spamCount - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 700));
+                    }
+                }
+
+                localStorage.setItem('prank_logs', JSON.stringify(logs));
+                renderLogs();
+
+                responseBox.className = "mt-2.5 p-2.5 rounded-xl text-[11px] font-medium text-center bg-emerald-500/20 border border-emerald-500/30 text-emerald-300";
+                responseBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-400"></i> সফলভাবে ${spamCount} বার প্র্যাঙ্ক পাঠানো হয়েছে!`;
                 responseBox.classList.remove('hidden');
 
+                if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+
             } catch (error) {
-                // Error Alert
-                responseBox.className = "mt-4 p-4 rounded-2xl text-xs font-medium text-center bg-rose-500/20 border border-rose-500/30 text-rose-300";
-                responseBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-rose-400"></i> Network Error! Please try again.`;
+                responseBox.className = "mt-2.5 p-2.5 rounded-xl text-[11px] font-medium text-center bg-rose-500/20 border border-rose-500/30 text-rose-300";
+                responseBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-rose-400"></i> নেটওয়ার্ক সমস্যা! আবার চেষ্টা করুন।`;
                 responseBox.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i><span>Send Prank</span>`;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-[11px]"></i><span>Send Prank</span>`;
             }
         });
     </script>
