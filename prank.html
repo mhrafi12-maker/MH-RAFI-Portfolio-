@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prank Call By MH RAFI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SF Pro / Apple System Font Style -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        /* iOS Glassmorphism */
+        .ios-glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ios-input {
+            background: rgba(120, 120, 128, 0.24);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+        .ios-input:focus {
+            background: rgba(120, 120, 128, 0.35);
+            border-color: #0a84ff;
+        }
+        /* iOS Action Sheet Modal animation */
+        #pickerModal {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-5 bg-gradient-to-b from-[#1c1c1e] via-[#000000] to-[#000000]">
+
+    <!-- Top iOS Status Bar (Only Clock as requested) -->
+    <div class="flex justify-between items-center text-sm text-white px-2 py-1 font-semibold tracking-wide">
+        <span id="clock">9:41</span>
+        <div class="flex items-center space-x-1 text-xs text-gray-400">
+            <span>PrankOS</span>
+        </div>
+    </div>
+
+    <!-- Main Content Full Screen Container -->
+    <div class="w-full max-w-md mx-auto my-auto flex flex-col justify-center space-y-6">
+        
+        <!-- App Header & Branding -->
+        <div class="text-center">
+            <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[28px] mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/30 mb-4 border border-white/20">
+                <i class="fa-solid fa-masks-theater text-4xl text-white"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Prank Call</h1>
+            <p class="text-xs text-blue-400 font-medium mt-1 tracking-widest uppercase">Prank Call By MH RAFI</p>
+        </div>
+
+        <!-- Form Section -->
+        <form id="prankForm" class="space-y-4 ios-glass p-6 rounded-[32px] shadow-2xl">
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">Phone Number</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                        <i class="fa-solid fa-phone text-sm"></i>
+                    </span>
+                    <input type="text" id="phone" required placeholder="017xxxxxxxx" 
+                        class="w-full pl-11 pr-4 py-3.5 ios-input rounded-2xl text-base focus:outline-none placeholder-gray-500 transition">
+                </div>
+            </div>
+
+            <!-- iOS Style Custom Picker/Dropdown Trigger -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">Select Prank</label>
+                <div id="pickerTrigger" class="w-full pl-4 pr-4 py-3.5 ios-input rounded-2xl text-sm focus:outline-none cursor-pointer flex items-center justify-between transition active:scale-[0.98]">
+                    <div class="flex items-center space-x-3 truncate">
+                        <i class="fa-solid fa-masks-theater text-gray-400 text-sm"></i>
+                        <span id="selectedPrankText" class="text-gray-400 truncate">একটি প্র্যাঙ্ক সিলেক্ট করুন</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+                </div>
+                <!-- Hidden select to store value -->
+                <input type="hidden" id="prank_id" required>
+            </div>
+
+            <button type="submit" id="submitBtn" 
+                class="w-full mt-3 bg-[#007AFF] hover:bg-[#0062cc] active:scale-95 text-white font-semibold py-4 px-4 rounded-2xl shadow-lg shadow-blue-500/30 transition duration-200 flex items-center justify-center space-x-2 text-base">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+                <span>Send Prank</span>
+            </button>
+        </form>
+
+        <!-- Response Message Notification Box -->
+        <div id="responseBox" class="hidden p-4 rounded-2xl text-xs font-medium text-center transition-all duration-300"></div>
+
+        <!-- Dev MH Telegram Link Button -->
+        <a href="https://t.me/mhtechonline" target="_blank" 
+           class="w-full ios-glass hover:bg-white/10 active:scale-95 transition-all duration-200 py-3.5 px-5 rounded-2xl flex items-center justify-between text-sm font-medium text-gray-300 group shadow-lg">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center group-hover:bg-sky-500/30 transition">
+                    <i class="fa-brands fa-telegram text-base"></i>
+                </div>
+                <span>Developed by <strong class="text-white font-semibold">Dev MH</strong></span>
+            </div>
+            <i class="fa-solid fa-arrow-up-right-from-square text-gray-500 text-xs"></i>
+        </a>
+    </div>
+
+    <!-- Footer Credit -->
+    <div class="text-center py-4">
+        <p class="text-xs text-gray-500">Love You Munnu • <span class="text-gray-400 font-semibold">MH RAFI</span></p>
+    </div>
+
+    <!-- iOS Native Style Picker Action Sheet Modal -->
+    <div id="pickerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="pickerSheet" class="w-full max-w-md bg-[#1c1c1e] border-t border-white/15 rounded-t-[36px] p-5 max-h-[80vh] overflow-y-auto transform translate-y-full transition-transform duration-300 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 px-2">
+                <span class="text-base font-semibold text-white">Choose Prank</span>
+                <button type="button" id="closePicker" class="text-blue-500 font-semibold text-sm px-3 py-1 bg-blue-500/10 rounded-full">Done</button>
+            </div>
+            <div class="space-y-2 pb-6" id="prankOptionsList">
+                <!-- Options will be injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Prank CallData List
+        const prankData = [
+            { id: "8810", title: "আপনি আমার গার্লফ্রেন্ডকে কল করেন কেন?" },
+            { id: "8805", title: "গাজার মতো দুর্গন্ধ!" },
+            { id: "8803", title: "পিজ্জা ডেলিভারি" },
+            { id: "8809", title: "আপনি কেন আমাকে কল করেন?" },
+            { id: "8808", title: "আপনি আমার ওয়াই-ফাই চুরি করছেন!" },
+            { id: "8806", title: "আপনার কামরার হৈচৈ আওয়াজ" },
+            { id: "8804", title: "আপনার ট্যাক্সি আপনার জন্য অপেক্ষা করছে" },
+            { id: "8807", title: "আপনার কুকুরটি খুবই ক্লান্তিকর!" }
+        ];
+
+        // Populate iOS Picker Options
+        const optionsListContainer = document.getElementById('prankOptionsList');
+        prankData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = "p-3.5 rounded-2xl bg-white/5 hover:bg-blue-500/20 border border-white/5 hover:border-blue-500/30 text-sm text-gray-200 cursor-pointer transition flex items-center justify-between";
+            div.innerHTML = `<span>${item.id} - ${item.title}</span><i class="fa-solid fa-check text-blue-500 opacity-0 check-icon"></i>`;
+            
+            div.addEventListener('click', () => {
+                document.getElementById('prank_id').value = item.id;
+                document.getElementById('selectedPrankText').innerText = `${item.id} - ${item.title}`;
+                document.getElementById('selectedPrankText').classList.remove('text-gray-400');
+                document.getElementById('selectedPrankText').classList.add('text-white');
+                
+                // Highlight selected item
+                document.querySelectorAll('#prankOptionsList > div').forEach(el => {
+                    el.classList.remove('bg-blue-500/20', 'border-blue-500/30');
+                    el.querySelector('.check-icon').style.opacity = '0';
+                });
+                div.classList.add('bg-blue-500/20', 'border-blue-500/30');
+                div.querySelector('.check-icon').style.opacity = '1';
+
+                closePickerModal();
+            });
+            optionsListContainer.appendChild(div);
+        });
+
+        // iOS Modal Open/Close Logic
+        const pickerModal = document.getElementById('pickerModal');
+        const pickerSheet = document.getElementById('pickerSheet');
+        const pickerTrigger = document.getElementById('pickerTrigger');
+        const closePicker = document.getElementById('closePicker');
+
+        pickerTrigger.addEventListener('click', () => {
+            pickerModal.classList.remove('opacity-0', 'pointer-events-none');
+            pickerSheet.classList.remove('translate-y-full');
+        });
+
+        function closePickerModal() {
+            pickerModal.classList.add('opacity-0', 'pointer-events-none');
+            pickerSheet.classList.add('translate-y-full');
+        }
+
+        closePicker.addEventListener('click', closePickerModal);
+        pickerModal.addEventListener('click', (e) => {
+            if (e.target === pickerModal) closePickerModal();
+        });
+
+        // Live iOS Time Updater
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            hours = hours % 12 || 12;
+            document.getElementById('clock').innerText = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Prank CallForm Handler
+        const form = document.getElementById('prankForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const responseBox = document.getElementById('responseBox');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value.trim();
+            const prank_id = document.getElementById('prank_id').value;
+
+            if (!prank_id) {
+                alert('দয়া করে একটি প্র্যাঙ্ক সিলেক্ট করুন!');
+                return;
+            }
+
+            const apiUrl = `https://cxofb.nid-bd.my.id/wrom-gpt/api.php?phone=${encodeURIComponent(phone)}&prank_id=${encodeURIComponent(prank_id)}`;
+
+            // iOS Button Loading State
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-sm"></i><span>Sending...</span>`;
+            responseBox.classList.add('hidden');
+
+            try {
+                await fetch(apiUrl, { mode: 'no-cors' });
+
+                // Success Alert (iOS Style)
+                responseBox.className = "mt-4 p-4 rounded-2xl text-xs font-medium text-center bg-emerald-500/20 border border-emerald-500/30 text-emerald-300";
+                responseBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-400"></i> Prank CallSent Successfully by MH RAFI!`;
+                responseBox.classList.remove('hidden');
+
+            } catch (error) {
+                // Error Alert
+                responseBox.className = "mt-4 p-4 rounded-2xl text-xs font-medium text-center bg-rose-500/20 border border-rose-500/30 text-rose-300";
+                responseBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-rose-400"></i> Network Error! Please try again.`;
+                responseBox.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i><span>Send Prank</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
