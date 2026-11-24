@@ -307,6 +307,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 @keyframes ambientSweep{0%,20%{transform:translateX(-45%)}70%,100%{transform:translateX(45%)}}
 .glass{box-shadow:0 20px 55px rgba(0,0,0,.065),inset 0 1px 0 rgba(255,255,255,.55)}
 .card{transition:transform .22s,box-shadow .22s,border-color .22s}
+.card{animation:cardRise .65s cubic-bezier(.2,.75,.25,1) both;animation-delay:var(--delay,0ms)}
+@keyframes cardRise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 .card:hover{transform:translateY(-3px);box-shadow:0 22px 55px rgba(0,0,0,.11)}
 .input:focus{border-color:rgba(0,122,255,.3);box-shadow:0 0 0 4px rgba(0,122,255,.08)}
 .premiumProfileBack{position:fixed;inset:0;z-index:3000;display:none;overflow:auto;background:var(--bg);padding-bottom:max(35px,env(safe-area-inset-bottom))}
@@ -457,6 +459,8 @@ body{overflow-x:hidden}
   content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
   background:linear-gradient(120deg,rgba(255,255,255,.30),transparent 38%,rgba(255,255,255,.08));
 }
+.card{animation:cardRise .65s cubic-bezier(.2,.75,.25,1) both;animation-delay:var(--delay,0ms)}
+@keyframes cardRise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 .card:hover{transform:translateY(-6px) scale(1.006);box-shadow:0 30px 80px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.9)!important}
 .press{transition:transform .18s var(--ios-ease),filter .18s ease,box-shadow .22s ease!important}
 .press:hover{filter:brightness(1.035)}
@@ -479,7 +483,9 @@ body{overflow-x:hidden}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .chip.interactive{transition:transform .2s var(--ios-ease),background .2s}
 .chip.interactive:hover{transform:translateY(-2px) scale(1.02)}
-@media(hover:none){.card:hover{transform:none}.press:hover{filter:none}}
+@media(hover:none){.card{animation:cardRise .65s cubic-bezier(.2,.75,.25,1) both;animation-delay:var(--delay,0ms)}
+@keyframes cardRise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.card:hover{transform:none}.press:hover{filter:none}}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
@@ -581,7 +587,7 @@ body{overflow-x:hidden}
 /* App identity image */
 window.MH_RAFI_PROFILE_IMAGE = "https://i.supaimg.com/5279356f-a8e6-4ce6-b452-1f223bcfb816/5db0c6a0-5095-42cb-b9db-176c1976c705.jpg";
 
-const API = "https://cxofb.nid-bd.my.id/eiin1.php?eiin=";
+const API = "https://kamrul24.site/KAMRUL/EIIN.php?eiin=";
 let employees = [];
 let currentEIIN = "";
 let toastTimer;
@@ -652,16 +658,27 @@ function normalizeRoot(data){
   if(Array.isArray(data)) return data;
   if(data && data.lmnxdata) return data.lmnxdata;
   if(data && data.lmnxData) return data.lmnxData;
-  return data && (data.data || data.result || data.results) || data || {};
+  const wrapped=data && (data.data || data.result || data.results || data.employees || data.teachers);
+  if(wrapped) return normalizeRoot(wrapped);
+  // This API returns an object keyed by numeric strings: {"0": {...}, "1": {...}}
+  if(data && typeof data === "object"){
+    const numericKeys=Object.keys(data).filter(k=>/^\d+$/.test(k)).sort((a,b)=>Number(a)-Number(b));
+    if(numericKeys.length && numericKeys.some(k=>data[k] && typeof data[k]==="object" && ("FullName" in data[k] || "FullNameBn" in data[k] || "EmpId" in data[k]))) return numericKeys.map(k=>data[k]);
+  }
+  return data || {};
 }
 function findEmployeeArray(obj, seen=new Set(), depth=0){
   if(!obj || typeof obj !== "object" || depth > 7 || seen.has(obj)) return [];
   seen.add(obj);
+  const isEmployee=x=>x && typeof x==="object" && (x.FullName || x.FullNameBn || x.EmpId || x.MobileNo || x.DesignationNameBn || x.empNameBn || x.empName || x.empId || x.mobileNo || x.designationNameBn || x.subjectName);
   if(Array.isArray(obj)){
-    if(obj.length && obj.some(x=>x && typeof x==="object" && (x.FullName || x.FullNameBn || x.EmpId || x.MobileNo || x.DesignationNameBn))) return obj;
+    if(obj.length && obj.some(isEmployee)) return obj.filter(x=>x && typeof x==="object");
     for(const x of obj){ const r=findEmployeeArray(x,seen,depth+1); if(r.length) return r; }
     return [];
   }
+  // Numeric-keyed employee collection used by kamrul24.site API.
+  const numericKeys=Object.keys(obj).filter(k=>/^\d+$/.test(k)).sort((a,b)=>Number(a)-Number(b));
+  if(numericKeys.length){ const rows=numericKeys.map(k=>obj[k]).filter(isEmployee); if(rows.length) return rows; }
   const keys=["employees","employee","teachers","teacher","staff","data","result","results","lmnxdata","lmnxData","কর্মচারী","শিক্ষক","কর্মকর্তা"];
   for(const k of keys){ if(obj[k]){ const r=findEmployeeArray(obj[k],seen,depth+1); if(r.length) return r; } }
   for(const v of Object.values(obj)){ const r=findEmployeeArray(v,seen,depth+1); if(r.length) return r; }
@@ -674,7 +691,7 @@ function findInstituteObject(data, employees){
     if(!o || typeof o!=="object" || depth>7 || seen.has(o)) return;
     seen.add(o);
     if(!Array.isArray(o)){
-      const score=["InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","EIIN","eiin","InstituteManagementTypeId","InstituteInstituteCategoryId"].reduce((n,k)=>n+(o[k]!=null?1:0),0);
+      const score=["InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","instituteName","EIIN","eiin","InstituteManagementTypeId","InstituteInstituteCategoryId"].reduce((n,k)=>n+(o[k]!=null?1:0),0);
       if(score>=2 && (!best || score>best.score)) best={score,obj:o};
       Object.values(o).forEach(v=>walk(v,depth+1));
     }
@@ -694,15 +711,15 @@ function render(data){
   const inst=findInstituteObject(data,employees);
 
   const name=cleanDisplay(pick(inst,[
-    "InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","name_bn","name","নাম"
+    "InstituteInstituteNameInBangla","InstituteNameBn","InstituteName","instituteName","name_bn","name","নাম"
   ]));
   const eiin=cleanDisplay(pick(inst,["EIIN","eiin"])) || currentEIIN;
-  const total=pick(inst,["TotalEmployees","total_employees","মোট সদস্য"]) || employees.length;
+  const total=pick(inst,["TotalEmployees","total_employees","মোট সদস্য"]) || pick(data,["totalEmployees","total_employees","total"]) || employees.length;
 
-  const subjectSet=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName)).filter(x=>x!=="তথ্য নেই"))];
+  const subjectSet=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName || p.subjectName)).filter(x=>x!=="তথ্য নেই"))];
   const designationCount={};
   employees.forEach(p=>{
-    const d=cleanDisplay(p.DesignationNameBn || p.DesignationName);
+    const d=cleanDisplay(p.DesignationNameBn || p.designationNameBn || p.DesignationName || p.designationName);
     if(d!=="তথ্য নেই") designationCount[d]=(designationCount[d]||0)+1;
   });
 
@@ -753,14 +770,14 @@ function renderEmployees(list){
 }
 
 function employeeCard(person,index){
-  const photo=pick(person,["Image","ছবি","photo","image","photo_url","Photo"]);
+  const photo=personPhoto(person);
   const name=pick(person,["FullNameBn","পূর্ণ নাম","পুরো নাম","name_bn","name"]) || "নাম পাওয়া যায়নি";
-  const en=pick(person,["FullName","full_name_en","name_en"]);
-  const designation=pick(person,["DesignationNameBn","DesignationName","পদবী","পদবি"]);
-  const mobile=pick(person,["MobileNo","মোবাইল","মোবাইল নম্বর","phone","mobile"]);
-  const email=pick(person,["Email","ইমেইল","email"]);
-  const subject=pick(person,["SubjectName","বিষয়","বিষয়"]);
-  const indexNo=pick(person,["IndexNo","Index","সূচক"]);
+  const en=pick(person,["FullName","empName","full_name_en","name_en"]);
+  const designation=pick(person,["DesignationNameBn","designationNameBn","designationName","DesignationName","পদবী","পদবি","পদবী","পদবি"]);
+  const mobile=pick(person,["MobileNo","mobileNo","মোবাইল","মোবাইল নম্বর","phone","mobile"]);
+  const email=pick(person,["Email","email","ইমেইল"]);
+  const subject=pick(person,["SubjectName","subjectName","বিষয়","বিষয়"]);
+  const indexNo=pick(person,["IndexNo","Index","empId","empRefId","id","সূচক"]);
   const fav=isFav(person);
 
   const infoItems=[
@@ -808,7 +825,7 @@ function filterEmployees(){
 
 function openAdvancedFilter(){
   showToast("☷ Advanced Filter");
-  const subjects=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName)).filter(x=>x!=="তথ্য নেই"))];
+  const subjects=[...new Set(employees.map(p=>cleanDisplay(p.SubjectName || p.subjectName)).filter(x=>x!=="তথ্য নেই"))];
   const designations=[...new Set(employees.map(p=>cleanDisplay(p.DesignationNameBn)).filter(x=>x!=="তথ্য নেই"))];
   const box=document.createElement("div");
   box.className="sheetBack show";
@@ -831,8 +848,8 @@ function applyAdvancedFilter(){
   const s=($("advSubject")?.value||"").toLowerCase();
   const d=($("advDesignation")?.value||"").toLowerCase();
   const list=employees.filter(p=>{
-    const ps=cleanDisplay(p.SubjectName).toLowerCase();
-    const pd=cleanDisplay(p.DesignationNameBn).toLowerCase();
+    const ps=cleanDisplay(p.SubjectName || p.subjectName).toLowerCase();
+    const pd=cleanDisplay(p.DesignationNameBn || p.designationNameBn || p.DesignationName || p.designationName).toLowerCase();
     return (!s||ps===s)&&(!d||pd===d);
   });
   $("advancedFilterSheet")?.remove();
@@ -841,8 +858,8 @@ function applyAdvancedFilter(){
 }
 function sortEmployees(){
   employees.sort((a,b)=>{
-    const A=String(pick(a,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
-    const B=String(pick(b,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
+    const A=String(pick(a,["FullNameBn","empNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
+    const B=String(pick(b,["FullNameBn","empNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])).toLowerCase();
     return A.localeCompare(B,"bn");
   });
   renderEmployees(employees);
@@ -864,7 +881,7 @@ function emailPerson(e){window.location.href="mailto:"+e}
 
 async function sharePerson(index){
   const p=employees[index]; if(!p) return;
-  const name=pick(p,["FullNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher";
+  const name=pick(p,["FullNameBn","empNameBn","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher";
   let text=`${name}\nTeacher Info by MH RAFI\n`;
   Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!==undefined&&k!=="ছবি")text+=`${k}: ${typeof v==="object"?JSON.stringify(v):cleanDisplay(v)}\n`});
   if(navigator.share){try{await navigator.share({title:name,text})}catch{}}
@@ -920,12 +937,21 @@ renderRecent();
 
 /* Premium Teacher Profile */
 let activeProfileIndex=-1;
-function personName(p){return pick(p,["FullNameBn","FullName","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher"}
-function personPhoto(p){return pick(p,["Image","ছবি","photo","image","photo_url","Photo"])}
-function personDesignation(p){return pick(p,["DesignationNameBn","DesignationName","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"])||"Designation not available"}
-function personMobile(p){return pick(p,["MobileNo","মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"])}
-function personEmail(p){return pick(p,["Email","ইমেইল","email"])}
-function favKey(p){return "teacher_fav_"+String(pick(p,["EmpId","আইডি","ID","id"])||personName(p))}
+function personName(p){return pick(p,["FullNameBn","FullName","empNameBn","empName","পূর্ণ নাম","পুরো নাম","পূর্ণনাম","name_bn","name"])||"Teacher"}
+function personPhoto(p){
+  let raw=pick(p,["Image","image","ছবি","photo","photo_url","Photo"]);
+  if(!raw || raw==="-" || /^null$/i.test(String(raw).trim())) return "";
+  raw=String(raw).trim();
+  const htmlMatch=raw.match(/(?:src|href)=["']([^"']+)["']/i);
+  if(htmlMatch) raw=htmlMatch[1];
+  if(raw.startsWith("//")) raw=location.protocol+raw;
+  else if(raw.startsWith("/")) raw="https://kamrul24.site"+raw;
+  return /^(https?:|data:image\/)/i.test(raw) ? raw : "";
+}
+function personDesignation(p){return pick(p,["DesignationNameBn","designationNameBn","designationName","DesignationName","পদবী","পদবি","পদবী নামবিন","পদবী নাম","পদবিনামবিন","পদবী","পদবি"])||"Designation not available"}
+function personMobile(p){return pick(p,["MobileNo","mobileNo","মোবাইল","মোবাইল নম্বর","মোল নম্বর","বাইল নম্বর","মোয়েল নম্বর","phone","mobile","mobile_no"])}
+function personEmail(p){return pick(p,["Email","email","ইমেইল"])}
+function favKey(p){return "teacher_fav_"+String(pick(p,["EmpId","empId","empRefId","আইডি","ID","id"])||personName(p))}
 function isFav(p){return localStorage.getItem(favKey(p))==="1"}
 function toggleFav(i){
   const p=employees[i];if(!p)return;
@@ -946,7 +972,7 @@ function openProfile(i){
   let rows="";
   Object.entries(p).forEach(([k,v])=>{
     if(v===null||v===undefined||v==="")return;
-    if(["Image","ছবি","photo","image","photo_url","Photo"].includes(k))return;
+    if(["Image","image","ছবি","photo","photo_url","Photo"].includes(k))return;
     rows+=`<div class="infoRow"><div class="infoIcon">${iconFor(k)}</div><div><span class="infoKey">${safe(k)}</span><span class="infoValue">${safe(typeof v==="object"?JSON.stringify(v):cleanDisplay(v))}</span></div></div>`;
   });
   const img=photo?`<img class="profilePhoto" src="${attr(photo)}" alt="Teacher Photo" onclick="openViewer('${attr(photo)}')">`:`<div class="profilePhotoPlaceholder">👤</div>`;
